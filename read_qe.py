@@ -55,6 +55,13 @@ class qe_out:
     +
     +   No return
     ============================================================================
+    +   5. Method read_time(self)
+    +   Attributes:
+    +   self.cpu_time (the time during which the processor is actively working)
+    +   self.wall_time (elapsed real time)
+    +
+    +   No return
+    ============================================================================
     """
     def __init__(self, dir_f="relax.out", show_details=False):
         """
@@ -97,8 +104,8 @@ class qe_out:
                     self.atomic_species.update({temp[j][0]: float(temp[j][2])})
             elif "number of k points" in line:
                 self.nk = int(re.findall(r"[+-]?\d+", line)[0])
-                self.kpoints_cart_coord = np.zeros((self.nk, 3), dtype=float)
-                self.kpoints_cryst_coord = np.zeros((self.nk, 3), dtype=float)
+                self.kpoints_cart_coord = np.zeros((self.nk, 3))
+                self.kpoints_cryst_coord = np.zeros((self.nk, 3))
                 for j in range(self.nk):
                     self.kpoints_cart_coord[j, :] = \
                         np.array(re.findall(r"[+-]?\d+\.\d*", \
@@ -113,38 +120,38 @@ class qe_out:
         if show_details:
             sys.stdout.write("\rQuantum Espresso\n")
             sys.stdout.write(
-                "Atomic species: {}".format(self.atomic_species)+"\n"
+                "Atomic species: {}\n".format(self.atomic_species)
                 )
             sys.stdout.write(
-                "Number of atome: {}".format(str(self.nat))+"\n"
+                "Number of atome: {}\n".format(str(self.nat))
                 )
             sys.stdout.write(
-                "Number of atomic types: {}".format(str(self.ntyp))+"\n"
+                "Number of atomic types: {}\n".format(str(self.ntyp))
                 )
             sys.stdout.write(
-                "Number of K points in irreducible Brilloin zone: {}"\
-                .format(str(self.nk))+"\n"
+                "Number of K points in irreducible Brilloin zone: {}\n"\
+                .format(str(self.nk))
                 )
             sys.stdout.write(
-                "Number of bands: {}".format(str(self.nbnd))+"\n"
+                "Number of bands: {}\n".format(str(self.nbnd))
                 )
             sys.stdout.write(
-                "Spin polarization: {}".format(self.spinpol)+"\n"
+                "Spin polarization: {}\n".format(self.spinpol)
                 )
 
             if self.spinpol and self.up_ne != 0:
                 sys.stdout.write(
-                    "Number of electrons: {} (up: {}, down: {})"\
-                    .format(str(self.ne), str(self.up_ne), str(self.dn_ne)) + "\n"
+                    "Number of electrons: {} (up: {}, down: {})\n"\
+                    .format(str(self.ne), str(self.up_ne), str(self.dn_ne))
                     )
             elif self.spinpol and self.up_ne == 0:
                 sys.stdout.write(
-                    "Number of electrons: {} (Input has no 'nspin=2')"\
-                    .format(str(self.ne)) + "\n"
+                    "Number of electrons: {} (Input has no 'nspin=2')\n"\
+                    .format(str(self.ne))
                     )
             else:
                 sys.stdout.write(
-                    "Number of electrons: {}".format(str(self.ne)) + "\n"
+                    "Number of electrons: {}\n".format(str(self.ne))
                     )
             sys.stdout.flush()
 
@@ -212,9 +219,8 @@ class qe_out:
         else:
             # In this case, spin up and spin down have the same eigenenergies
             nk_spin = self.nk
-        #self.kpoints = np.zeros((nk_spin, 3), dtype=float)
-        self.eigenE = np.zeros((nk_spin, self.nbnd), dtype=float)
-        self.occ = np.zeros((nk_spin, self.nbnd), dtype=float)
+        self.eigenE = np.zeros((nk_spin, self.nbnd))
+        self.occ = np.zeros((nk_spin, self.nbnd))
         int_multi_8 = True
         k_counted = 0
         num_scf = 0
@@ -244,20 +250,20 @@ class qe_out:
                 for j in range(rows):
                     if int_multi_8:
                         self.eigenE[k_counted, j*8:(j+1)*8] = \
-                            np.asarray(temp_E[j].strip("\n").split())
+                            np.asarray(temp_E[j].strip().split())
                         self.occ[k_counted, j*8:(j+1)*8] = \
-                            np.asarray(temp_occ[j].strip("\n").split())
+                            np.asarray(temp_occ[j].strip().split())
                     else:
                         if j < rows -1:
                             self.eigenE[k_counted, j*8:(j+1)*8] = \
-                                np.asarray(temp_E[j].strip("\n").split())
+                                np.asarray(temp_E[j].strip().split())
                             self.occ[k_counted, j*8:(j+1)*8] = \
-                                np.asarray(temp_occ[j].strip("\n").split())
+                                np.asarray(temp_occ[j].strip().split())
                         else:
                             self.eigenE[k_counted, j*8:j*8+mol] = \
-                                np.asarray(temp_E[j].strip("\n").split())
+                                np.asarray(temp_E[j].strip().split())
                             self.occ[k_counted, j*8:j*8+mol] = \
-                                np.asarray(temp_occ[j].strip("\n").split())
+                                np.asarray(temp_occ[j].strip().split())
                 k_counted += 1
 
         if self.spinpol and self.up_ne == 0 and self.dn_ne == 0:
@@ -269,9 +275,8 @@ class qe_out:
                             )[0][0]
             if self.show_details:
                 sys.stdout.write(
-                    "Number of electrons: {} (up: {}, down: {})"\
-                    .format(str(self.ne), str(self.up_ne), str(self.dn_ne))\
-                    +"\n"
+                    "Number of electrons: {} (up: {}, down: {})\n"\
+                    .format(str(self.ne), str(self.up_ne), str(self.dn_ne))
                     )
         return(self.eigenE, self.occ)
 
@@ -306,24 +311,24 @@ class qe_out:
 
         and indirect bandgap
         """
-        if self.spinpol:
+        if self.spinpol:    # spin polarized
             nk_spin = self.nk * 2
-            self.direct_gap = np.zeros(nk_spin, dtype=float)
-            kpoints = np.zeros((nk_spin, 3), dtype=float)
+            self.direct_gap = np.zeros(nk_spin)
+            kpoints = np.zeros((nk_spin, 3))
             kpoints = np.concatenate(
                         (self.kpoints_cryst_coord, self.kpoints_cryst_coord)
                         )
 
             assert self.nbnd > self.up_ne and self.nbnd > self.dn_ne, \
-                "No empty band ゴ~ゴ~ゴ~ゴ~"
+                "No empty band ゴ~ゴ~ゴ~ゴ~\n"
 
             for i in range(nk_spin):
                 # The first half is spin up direct gap, the second half is
                 # spin down direct gap
-                if i < self.nk:
+                if i < self.nk: # spin up
                     self.direct_gap[i] = self.eigenE[i, int(self.up_ne)] - \
                                     self.eigenE[i, int(self.up_ne-1)]
-                else:
+                else:   # spin down
                     self.direct_gap[i] = self.eigenE[i, int(self.dn_ne)] - \
                                     self.eigenE[i, int(self.dn_ne-1)]
 
@@ -331,35 +336,35 @@ class qe_out:
                     np.amin(self.eigenE[:self.nk, int(self.up_ne)]) - \
                     np.amax(self.eigenE[:self.nk, int(self.up_ne-1)])
             indirect_gap_dn = \
-                    np.amin(self.eigenE[self.nk:self.nk*2, int(self.dn_ne)]) - \
-                    np.amax(self.eigenE[self.nk:self.nk*2, int(self.dn_ne-1)])
+                    np.amin(self.eigenE[self.nk:, int(self.dn_ne)]) - \
+                    np.amax(self.eigenE[self.nk:, int(self.dn_ne-1)])
             self.indirect_gap = min(indirect_gap_up, indirect_gap_dn)
 
-            if self.indirect_gap == indirect_gap_up:
-                cbm = np.amin(self.eigenE[:, int(self.up_ne)])
-                vbm = np.amax(self.eigenE[:, int(self.up_ne-1)])
+            if self.indirect_gap == indirect_gap_up:    # bandgap in spin up
+                cbm = np.amin(self.eigenE[:self.nk, int(self.up_ne)])
+                vbm = np.amax(self.eigenE[:self.nk, int(self.up_ne-1)])
                 index_k_cbm = np.where(
-                                self.eigenE[:, int(self.up_ne)] == cbm
+                                self.eigenE[:self.nk, int(self.up_ne)] == cbm
                                 )[0][0]
                 index_k_vbm = np.where(
-                                self.eigenE[:, int(self.up_ne-1)] == vbm
+                                self.eigenE[:self.nk, int(self.up_ne-1)] == vbm
                                 )[0][0]
-            else:
-                cbm = np.amin(self.eigenE[:, int(self.dn_ne)])
-                vbm = np.amax(self.eigenE[:, int(self.dn_ne-1)])
+            else:   # bandgap in spin down
+                cbm = np.amin(self.eigenE[self.nk:, int(self.dn_ne)])
+                vbm = np.amax(self.eigenE[self.nk:, int(self.dn_ne-1)])
                 index_k_cbm = np.where(
-                                self.eigenE[:, int(self.dn_ne)] == cbm
+                                self.eigenE[self.nk:, int(self.dn_ne)] == cbm
                                 )[0][0]
                 index_k_vbm = np.where(
-                                self.eigenE[:, int(self.dn_ne-1)] == vbm
+                                self.eigenE[self.nk:, int(self.dn_ne-1)] == vbm
                                 )[0][0]
 
-        else:
-            self.direct_gap = np.zeros(self.nk, dtype=float)
-            kpoints = np.zeros((self.nk, 3), dtype=float)
+        else:   # not spin polarized
+            self.direct_gap = np.zeros(self.nk)
+            kpoints = np.zeros((self.nk, 3))
             kpoints = self.kpoints_cryst_coord
 
-            assert self.nbnd > self.ne/2, "No empty band ゴ~ゴ~ゴ~ゴ~"
+            assert self.nbnd > self.ne/2, "No empty band ゴ~ゴ~ゴ~ゴ~\n"
 
             for i in range(self.nk):
                 self.direct_gap[i] = self.eigenE[i, int(self.ne/2)] - \
@@ -384,14 +389,14 @@ class qe_out:
         if self.show_details:
             sys.stdout.write(
                 "CBM = {} eV is at No.{} K point: {}\n"\
-                .format(cbm, index_k_cbm, k_cbm)
+                .format(cbm, index_k_cbm+1, k_cbm)
                 )
             sys.stdout.write(
                 "VBM = {} eV is at No.{} K point: {}\n"\
-                .format(vbm, index_k_vbm, k_vbm)
+                .format(vbm, index_k_vbm+1, k_vbm)
                 )
             sys.stdout.write("Bandgap = {} eV\n".format(self.indirect_gap))
-            sys.stdout.write("Direct bandgap: {}\n".format(self.direct_gap))
+            sys.stdout.write("Direct bandgap: {} eV\n".format(self.direct_gap))
             sys.stdout.flush()
 
 
@@ -411,10 +416,10 @@ class qe_out:
         |____                         ____| (self.nat x 1)
         """
         self.atoms = np.zeros(self.nat, dtype="U4")
-        self.atomic_pos = np.zeros((self.nat, 3), dtype=float)
-        self.ap_cart_coord = np.zeros((self.nat, 3), dtype=float)
-        self.cryst_axes = np.zeros((3, 3), dtype=float)
-        self.R_axes = np.zeros((3, 3), dtype=float)
+        self.atomic_pos = np.zeros((self.nat, 3))
+        self.ap_cart_coord = np.zeros((self.nat, 3))
+        self.cryst_axes = np.zeros((3, 3))
+        self.R_axes = np.zeros((3, 3))
         is_geometry_optimized = False
 
         for i, line in enumerate(self.lines):
@@ -431,16 +436,46 @@ class qe_out:
             if "End of BFGS Geometry Optimization" in line:
                 is_geometry_optimized = True
                 for j in range(self.nat):
-                    self.atoms[j] = self.lines[i+6+j].strip("\n").split()[0]
+                    self.atoms[j] = self.lines[i+6+j].strip().split()[0]
                     self.atomic_pos[j] = \
-                        self.lines[i+6+j].strip("\n").split()[1:4]
+                        self.lines[i+6+j].strip().split()[1:4]
         if not is_geometry_optimized:
-            raise ValueError(
-                    "This is not a relax calculation, no updated" +
-                    "atomic positions."
+            sys.stdout.write(
+                    "This is not a relax calculation, no updated " +
+                    "atomic positions.\n"
                     )
+            sys.stdout.flush()
 
         self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
+    
+
+    def read_time(self):
+        self.cpu_time = 0
+        self.wall_time = 0
+        for line in self.lines[::-1]:
+            if "PWSCF        :" in line:
+                time = re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)
+                units = re.findall(r"d|h|m|s", line)
+                num = int(len(units)/2)
+        for i, unit in enumerate(units[:num]): # cpu time
+            if unit == "d":
+                self.cpu_time += float(time[i]) * 24 * 60 * 60
+            elif unit == "h":
+                self.cpu_time += float(time[i]) * 60 * 60
+            elif unit == "m":
+                self.cpu_time += float(time[i]) * 60
+            else:
+                self.cpu_time += float(time[i])
+        for i, unit in enumerate(units[num:]): # cpu time
+            if unit == "d":
+                self.wall_time += float(time[i+num]) * 24 * 60 * 60
+            elif unit == "h":
+                self.wall_time += float(time[i+num]) * 60 * 60
+            elif unit == "m":
+                self.wall_time += float(time[i+num]) * 60
+            else:
+                self.wall_time += float(time[i+num])
+        
 
 
 class qe_in:
@@ -467,17 +502,17 @@ class qe_in:
     def __init__(self, dir_f="./relax.in"):
         self.fname = dir_f
         try:
-            sys.stdout.write("Start to open {}".format(self.fname))
+            sys.stdout.write("Start to open {}\n".format(self.fname))
             self.qe_in = open(self.fname, "r")
         except:
-            sys.stdout.write("Fail to open {}".format(self.fname))
-            sys.stdout.write("Trying to read the QE input: scf.in")
+            sys.stdout.write("Fail to open {}\n".format(self.fname))
+            sys.stdout.write("Trying to read the QE input: scf.in\n")
             self.fname = "scf.in"
             self.dir = os.path.join(os.path.dirname(dir_f), "scf.in")
             try:
                 self.qe_in = open(self.fname, "r")
             except:
-                raise IOError("Fail to open {}".format(self.fname))
+                raise IOError("Fail to open {}\n".format(self.fname))
         self.lines = self.qe_in.readlines()
         for i, line in enumerate(self.lines):
             if "nat" in line:
@@ -501,9 +536,9 @@ class qe_in:
         |____                         ____| (self.nat x 1)
         """
         self.atoms = np.zeros(self.nat, dtype="U4")
-        self.atomic_pos = np.zeros((self.nat, 3), dtype=float)
-        self.ap_cart_coord = np.zeros((self.nat, 3), dtype=float)
-        self.cryst_axes = np.zeros((3, 3), dtype=float)
+        self.atomic_pos = np.zeros((self.nat, 3))
+        self.ap_cart_coord = np.zeros((self.nat, 3))
+        self.cryst_axes = np.zeros((3, 3))
         
         for i, line in enumerate(self.lines):
             if "CELL_PARAMETERS" in line:
@@ -512,7 +547,7 @@ class qe_in:
                         re.findall(r"[+-]?\d+\.\d*", self.lines[i+1+j])
             if "ATOMIC_POSITIONS" in line:
                 for j in range(self.nat):
-                    self.atoms[j] = self.lines[i+1+j].strip("\n").split()[0]
+                    self.atoms[j] = self.lines[i+1+j].strip().split()[0]
                     self.atomic_pos[j, :] = \
                         re.findall(r"[+-]?\d+\.\d*", self.lines[i+1+j])
         self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
@@ -529,8 +564,8 @@ def read_vac(dir_f=".avg.out"):
     """
     f = open(dir_f, "r")
     lines = f.readlines()[23:-10]
-    z = np.zeros(len(lines), dtype=float)
-    vac = np.zeros(len(lines), dtype=float)
+    z = np.zeros(len(lines))
+    vac = np.zeros(len(lines))
     for i, line in enumerate(lines):
         z[i] = re.findall(r"[+-]?\d+\.\d*", line)[0]
         vac[i] = re.findall(r"[+-]?\d+\.\d*", line)[1]
@@ -582,14 +617,15 @@ if __name__ == "__main__":
 
     """
 #===============================================================================
-    dir = "/home/likejun/work/tibn/nk331/tibn_oncv_c1/6x6/nonradiative/relax-cdftup1/relax.out"
-    qe = qe_out(dir)
+    dir = "/home/likejun/work/tibn/nk331/tibn_oncv_c1/6x6/nonradiative/relax-gs/relax.out"
+    qe = qe_out(dir, show_details=True)
 
-    eigenE, occ = qe.read_eigenenergies()
+    qe.read_eigenenergies()
 
     qe.read_bandgap()
     qe.read_atomic_pos()
-    print(qe.ap_cart_coord)
+    qe.read_time()
+
     #view_3d(qe.ap_cart_coord[:, 0], qe.ap_cart_coord[:, 1], qe.ap_cart_coord[:, 2])
     #plt.show()
 #===============================================================================
