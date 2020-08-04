@@ -55,10 +55,12 @@ class qe_out:
     +
     +   No return
     ============================================================================
-    +   5. Method read_time(self)
+    +   5. Method read_miscellus(self)
     +   Attributes:
     +   self.cpu_time (the time during which the processor is actively working)
     +   self.wall_time (elapsed real time)
+    +   self.fft (fast Fourier transform)
+    +   self.dense_grid
     +
     +   No return
     ============================================================================
@@ -449,15 +451,21 @@ class qe_out:
         self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
     
 
-    def read_time(self):
+    def read_miscellus(self):
+        self.fft = np.zeros(3)
         self.cpu_time = 0
         self.wall_time = 0
+        for line in self.lines:
+            if "FFT dimensions" in line:
+                self.dense_grid = re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)[0]
+                self.fft = re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)[1:]
+
         for line in self.lines[::-1]:
             if "PWSCF        :" in line:
                 time = re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)
                 units = re.findall(r"d|h|m|s", line)
                 num = int(len(units)/2)
-        for i, unit in enumerate(units[:num]): # cpu time
+        for i, unit in enumerate(units[:num]): # cpu time, convert units to s
             if unit == "d":
                 self.cpu_time += float(time[i]) * 24 * 60 * 60
             elif unit == "h":
@@ -466,7 +474,7 @@ class qe_out:
                 self.cpu_time += float(time[i]) * 60
             else:
                 self.cpu_time += float(time[i])
-        for i, unit in enumerate(units[num:]): # cpu time
+        for i, unit in enumerate(units[num:]): # wall time, convert units to s
             if unit == "d":
                 self.wall_time += float(time[i+num]) * 24 * 60 * 60
             elif unit == "h":
@@ -475,6 +483,7 @@ class qe_out:
                 self.wall_time += float(time[i+num]) * 60
             else:
                 self.wall_time += float(time[i+num])
+
         
 
 
