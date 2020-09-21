@@ -5,16 +5,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import re
-from constants import *
+import scipy.constants as spc
 
 class qe_out:
     """
     ============================================================================
     +   1. Constructor
     +   Attributes:
-    +   self.fname (the specific directory to the file)
-    +   self.dir (the directory which contains the file)
-    +   self.qe_out (read the file)
     +   self.lines (lines in the file)
     +   self.atomic_species (atomic species with mass)
     +   self.nat (number of atoms)
@@ -23,6 +20,10 @@ class qe_out:
     +   self.up_ne (number of spin up electrons)
     +   self.dn_ne (number of spin down electrons)
     +   self.nbnd (number of bands (Kohn-Sham states))
+    +   self.ecutwfc (kinetic-energy cutoff)
+    +   self.mixing_beta (mixing factor for self-consistency)
+    +   self.xc_functional (exhange-correlation functional)
+    +   self.exx_fraction (exact-exchange fraction)
     +   self.nk (number of k points)
     +   self.kpoints_cart_coord (k points in cartesian coordinates)
     +   self.kpoints_cryst_coord (k points in crystal coordinates)
@@ -33,8 +34,8 @@ class qe_out:
     ============================================================================
     +   2. Method read_etot(self)
     +
-    +   return(etot)
-    +   etot[-1] is the final total energy
+    +   self.etot (total energy at each ionic step)
+    +   self.etot[-1] is the final total energy
     ============================================================================
     +   3. Method read_eigenenergies(self)
     +   Attributes:
@@ -54,7 +55,7 @@ class qe_out:
     +   5. Method read_atomic_pos(self)
     +   Attributes:
     +   self.atomsfull (full atomic name associated with each atomic position)
-    +   self.atoms (atomic name associated with each atomic position)
+    +   self.atoms (atomic species associated with each atomic position)
     +   self.atomic_pos (atomic positions in fractional crystal coordinates)
     +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
     +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
@@ -72,22 +73,28 @@ class qe_out:
     +   No return
     ============================================================================
     """
-    def __init__(self, dir_f="relax.out", show_details=False):
+    def __init__(self, path, show_details=True):
         """
         init method or constructor for initialization
         read information in qe output file like scf.out and relax.out
         """
-        self.fname = dir_f
-        self.dir = os.path.dirname(dir_f)
-        if self.dir == "":
-            self.dir = "."
+        is_qe_output = False
+        if os.path.exists(path):
+            if path.endswith(".out"):
+                is_qe_output = True
+                qe_output = open(path, "r")
+            else:
+                # for f in os.listdir(path):
+                #     if f.endswith(".out"):
+                #         is_qe_output = True
+                #         qe_output = open(f, "r")
+                qe_output = open(os.path.join(path, sys.argv[1]), "r")
+                is_qe_output = True
+        if not is_qe_output:
+            raise IOError("Fail to open {}".format("QE output file"))
+            
 
-        try:
-            self.qe_out = open(self.fname, "r")
-        except:
-            raise IOError("Fail to open {}".format(self.fname))
-
-        self.lines = self.qe_out.readlines()
+        self.lines = qe_output.readlines()
         self.atomic_species = {}
         self.up_ne = 0
         self.dn_ne = 0
@@ -107,6 +114,14 @@ class qe_out:
                     self.spinpol = False
             elif "number of Kohn-Sham states" in line:
                 self.nbnd = int(re.findall(r"[+-]?\d+", line)[0])
+            elif "kinetic-energy cutoff" in line:
+                self.ecutwfc = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+            elif "mixing beta" in line:
+                self.mixing_beta = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+            elif "Exchange-correlation" in line:
+                self.xc_functional = line.strip().split()[2]
+            elif "EXX-fraction" in line:
+                self.exx_fraction = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
             elif "spin-orbit" in line:
                 self.soc = True
             elif "atomic species   valence    mass" in line:
@@ -135,7 +150,7 @@ class qe_out:
                 "Atomic species: {}\n".format(self.atomic_species)
                 )
             sys.stdout.write(
-                "Number of atome: {}\n".format(str(self.nat))
+                "Number of atoms: {}\n".format(str(self.nat))
                 )
             sys.stdout.write(
                 "Number of atomic types: {}\n".format(str(self.ntyp))
@@ -147,6 +162,10 @@ class qe_out:
             sys.stdout.write(
                 "Number of bands: {}\n".format(str(self.nbnd))
                 )
+            sys.stdout.write(
+                "Kinetic-energy cutoff (ecutwfc): {} Ry\n"\
+                .format(str(self.ecutwfc))
+            )
             sys.stdout.write(
                 "Spin polarization: {}\n".format(self.spinpol)
                 )
@@ -168,20 +187,21 @@ class qe_out:
                     )
             sys.stdout.flush()
 
+
     def read_etot(self):
         """
         This method reads qe output to find lines with total energy
         and extract data from lines.
         conditions can be "!", "!!" and "Final"
-        output is an array
-        list_etot = np.array([etot1, etot2, etot3, ...])
         """
         num_etot = 0
+        Ry2eV = spc.physical_constants["Hartree energy in eV"][0]/2
         for line in self.lines:
             if "!" in line:
                 num_etot += 1
         etot_count = 0
-        self.etot = np.zeros(num_etot, dtype=float)
+        self.etot = np.zeros(num_etot)
+        self.final_energy = 0
         for line in self.lines:
             if "!" in line and num_etot > 0:
                 # \d +  # the integral part
@@ -191,10 +211,16 @@ class qe_out:
                     float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Ry2eV
                 etot_count += 1
             elif "Final" in line:
-                f_etot = float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Ry2eV
-                sys.stdout.write("Final total energy: {} eV\n".format(f_etot))
-                sys.stdout.flush()
-        
+                final_energy = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+                self.final_energy = final_energy * Ry2eV
+                break
+        if self.final_energy == 0 and len(self.etot) != 0:
+            self.final_energy = self.etot[-1]
+        if self.show_details:
+            sys.stdout.write(
+                "Final energy = {} eV\n".format(self.final_energy)
+            )
+            sys.stdout.flush()
 
 
     def read_eigenenergies(self):
@@ -292,6 +318,7 @@ class qe_out:
                     "Number of electrons: {} (up: {}, down: {})\n"\
                     .format(str(self.ne), str(self.up_ne), str(self.dn_ne))
                     )
+
 
     def read_bandgap(self):
         """
@@ -480,6 +507,7 @@ class qe_out:
         self.cryst_axes = np.zeros((3, 3))
         self.R_axes = np.zeros((3, 3))
         is_geometry_optimized = False
+        Bohr2Ang = spc.physical_constants["Bohr radius"][0]
 
         for i, line in enumerate(self.lines):
             if "celldm(1)=" in line:
@@ -523,6 +551,7 @@ class qe_out:
         for line in self.lines[::-1]:
             if "PWSCF        :" in line:
                 time = re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)
+                # a regular expression matches either d, h, m or s
                 units = re.findall(r"d|h|m|s", line)
                 num = int(len(units)/2)
         for i, unit in enumerate(units[:num]): # cpu time, convert units to s
@@ -568,21 +597,21 @@ class qe_in:
     +   No return
     ============================================================================
     """
-    def __init__(self, dir_f="./relax.in"):
-        self.fname = dir_f
-        try:
-            sys.stdout.write("Start to open {}\n".format(self.fname))
-            self.qe_in = open(self.fname, "r")
-        except:
-            sys.stdout.write("Fail to open {}\n".format(self.fname))
-            sys.stdout.write("Trying to read the QE input: scf.in\n")
-            self.fname = "scf.in"
-            self.dir = os.path.join(os.path.dirname(dir_f), "scf.in")
-            try:
-                self.qe_in = open(self.fname, "r")
-            except:
-                raise IOError("Fail to open {}\n".format(self.fname))
-        self.lines = self.qe_in.readlines()
+    def __init__(self, dir_f):
+        is_qe_input = False
+        if os.path.exists(path):
+            if path.endswith(".out"):
+                is_qe_input = True
+                qe_input = open(path, "r")
+            else:
+                for f in os.listdir(path):
+                    if f.endswith(".out"):
+                        is_qe_input = True
+                        qe_input = open(f, "r")
+        if not is_qe_input:
+            raise IOError("Fail to open {}".format("QE output file"))
+
+        self.lines = qe_input.readlines()
         for i, line in enumerate(self.lines):
             if "nat" in line:
                 self.nat = int(re.findall(r"[+-]?\d+", line)[0])
@@ -621,6 +650,7 @@ class qe_in:
         self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
 
 
+
 def read_vac(dir_f=".avg.out"):
     """
     ============================================================================
@@ -637,16 +667,18 @@ def read_vac(dir_f=".avg.out"):
     for i, line in enumerate(lines):
         z[i] = re.findall(r"[+-]?\d+\.\d*", line)[0]
         vac[i] = re.findall(r"[+-]?\d+\.\d*", line)[1]
-    z = z * Bohr2Ang
-    vac = vac * Ry2eV
+    z = z * spc.physical_constants["Bohr radius"][0]
+    vac = vac * spc.physical_constants["Hartree energy in eV"][0]/2
     return(z, vac)
 
         
 
 
 if __name__ == "__main__":
-    home = "/home/likejun/work/nbvn_vb/sg15_oncv/out-of-plane/vb/6x6/nonradiative/relax-gs/relax.out"
-    qe = qe_out(home, show_details=True)
+    path = os.getcwd()
+    qe = qe_out(path, show_details=True)
+    qe.read_etot()
     qe.read_eigenenergies()
     qe.read_bandgap()
     qe.read_atomic_pos()
+    qe.read_miscellus()
