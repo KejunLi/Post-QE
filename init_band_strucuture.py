@@ -8,7 +8,7 @@ from read_qe import qe_in, qe_bands
 plt.style.use("/home/likejun/work/github/plot_tools/styles/wamum")
 
 
-def combine_qe_in_and_out(path_input="./relax.in", path_output="./relax.out"):
+def nscf_for_bands_in_out(path_input="./relax.in", path_output="./relax.out"):
     bandsin = qe_in(path_input)
     bandsin.read_kpts()
     bandsout = qe_bands(path_output)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     pathout = "/home/likejun/c2cn/6x6/nonradiative/bands/job_bands/nscf_for_bands.out"
     vac = 0.162307899*spc.physical_constants["Hartree energy in eV"][0]/2
     fermi = -2.4572
-    x = combine_qe_in_and_out(path_input=pathin, path_output=pathout)
+    x = nscf_for_bands_in_out(path_input=pathin, path_output=pathout)
     if x[-1]:
         for i in range(x[2].shape[0]):
             if i == 0:
