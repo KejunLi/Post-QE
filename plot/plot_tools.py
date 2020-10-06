@@ -5,6 +5,7 @@ import sys
 from mpl_toolkits.mplot3d import Axes3D
 from fit_functions import quadratic_fct
 import matplotlib.colors as mc
+import matplotlib.cm as cm
 import colorsys
 import scipy.constants as spc
 
@@ -621,20 +622,48 @@ def plot_config_coord_diag(etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, **kwargs):
     
 
 
-def view_3d(atomic_positions, atomic_mass, **kwargs):
+def view_3d(
+    atomic_positions, atomic_mass, transparent_background=True, 
+    grid_off=True, axis_grid_off=False, **kwargs
+    ):
     fig = plt.figure(
-        num=None, figsize=(10, 7.5), dpi=120, facecolor='w', edgecolor='k'
+        num=None, figsize=(8, 6), dpi=200, facecolor='w', edgecolor='k'
     )
     ax = fig.add_subplot(1,1,1, projection="3d")
     ax.scatter(
         atomic_positions[:, 0], atomic_positions[:, 1], atomic_positions[:, 2], 
-        zdir="z", s=atomic_mass*2, c=atomic_mass/10
+        zdir="z", s=np.exp(4*atomic_mass/np.amax(atomic_mass)), 
+        c=cm.rainbow(1-(atomic_mass/np.amax(atomic_mass))**6)
     )
     surf = ax.plot_trisurf(
         atomic_positions[:, 0], atomic_positions[:, 1], atomic_positions[:, 2], 
         linewidth=0.2, antialiased=True, cmap=plt.cm.viridis, alpha=0.1
     )
+    
+    
+    print("Other optional inputs:")
+    if transparent_background == True:
+        # make the panes transparent (red, green, blue, and alpha (opacity))
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        print("transparent_background = False")
+    else:
+        print("transparent_background = True")
+    
+    if grid_off == True:
+        ax.grid(False)
+        print("grid_off = False")
+    else:
+        print("grid_off = True")
 
+    if axis_grid_off == True:
+        ax.set_axis_off()
+        print("axis_grid_off = False")
+    else:
+        print("axis_grid_off = True")
+
+    # below are kwargs
     if "circle" in kwargs:
         alpha = np.linspace(0.0, np.pi*2, 200)
         (center, radius) = kwargs.get("circle")
@@ -644,23 +673,16 @@ def view_3d(atomic_positions, atomic_mass, **kwargs):
         ax.scatter(center[0], center[1], center[2])
         ax.plot(x1, y1, z1)
     else:
-        sys.stdout.write(
-            "\rTip: to show circle with defects as center, " +
-            "specify 'circle = (r, x0, y0, z0)' from input"
-            )
+        print("circle = (defect_center, radius)")
 
-    sys.stdout.write("\nPlot \rTips")
     # title
     if "title" in kwargs:
         if kwargs.get("title") == None:
-            sys.stdout.write("\rNo title")
+            print("title == None")
         else:
             ax.set_title("{}".format(kwargs.get("title")))
     else:
-        sys.stdout.write(
-            "\rTip: to add title to diagram, specify " +
-            "'title = {}'".format("?") + "from input"
-            )
+        print("title = ?")
 
     # about view directions and axes labels
     if "view_direction" in kwargs:
@@ -670,146 +692,109 @@ def view_3d(atomic_positions, atomic_mass, **kwargs):
             ax.set_yticks([])
             if "xlabel" in kwargs:
                 if kwargs.get("xlabel") == None:
-                    sys.stdout.write("\rNo xlabel")
+                    print("xlabel == None")
                 else:
                     ax.set_xlabel(kwargs.get("xlabel"))
             else:
-                sys.stdout.write(
-                    "\rTip: to show xlabel, specify 'xlabel = ?' from input"
-                    )
+                print("xlabel = ?")
             if "zlabel" in kwargs:
                 if kwargs.get("zlabel") == None:
-                    sys.stdout.write("\rNo zlabel")
+                    print("zlabel == None")
                 else:
                     ax.set_zlabel(kwargs.get("zlabel"))
             else:
-                sys.stdout.write(
-                    "\rTip: to show zlabel, specify 'zlabel = ?' from input"
-                    )
+                print("zlabel = ?")
         elif kwargs.get("view_direction") == "top_view":
             ax.view_init(azim=-90, elev=90)
             ax.w_zaxis.line.set_lw(0.)
             ax.set_zticks([])
             if "xlabel" in kwargs:
                 if kwargs.get("xlabel") == None:
-                    sys.stdout.write("\rNo xlabel")
+                    print("xlabel == None")
                 else:
                     ax.set_xlabel(kwargs.get("xlabel"))
             else:
-                sys.stdout.write(
-                    "\rTip: to show xlabel, specify 'xlabel = ?' from input"
-                    )
+                print("xlabel = ?")
             if "ylabel" in kwargs:
                 if kwargs.get("ylabel") == None:
-                    sys.stdout.write("\rNo ylabel")
+                    print("ylabel == None")
                 else:
                     ax.set_ylabel(kwargs.get("ylabel"))
             else:
-                sys.stdout.write(
-                    "\rTip: to show ylabel, specify 'ylabel = ?' from input"
-                    )
+                print("ylabel = ?")
         else:
             ax.view_init(azim=-180, elev=0)
             ax.w_xaxis.line.set_lw(0.)
             ax.set_xticks([])
             if "ylabel" in kwargs:
                 if kwargs.get("ylabel") == None:
-                    sys.stdout.write("\rNo ylabel")
+                    print("ylabel == None")
                 else:
                     ax.set_ylabel(kwargs.get("ylabel"))
             else:
-                sys.stdout.write(
-                    "\rTip: to show ylabel, specify 'ylabel = ?' from input"
-                    )
+                print("ylabel = ?")
             if "zlabel" in kwargs:
                 if kwargs.get("zlabel") == None:
-                    sys.stdout.write("\rNo zlabel")
+                    print("zlabel == None")
                 else:
                     ax.set_zlabel(kwargs.get("zlabel"))
             else:
-                sys.stdout.write(
-                    "\rTip: to show zlabel, specify 'zlabel = ?' from input"
-                    )
+                print("zlabel = ?")
     else:
-        sys.stdout.write(
-            "\rTip: to take the top view of the 3D plot, " +
-            "specify 'view_direction = top_view' from input, so as " +
-            "for front view and left view."
-            )
+        print("view_direction = 'top_view'")
         if "xlabel" in kwargs:
             if kwargs.get("xlabel") == None:
-                sys.stdout.write("\rNo xlabel")
+                print("xlabel == None")
             else:
                 ax.set_xlabel(kwargs.get("xlabel"))
         else:
-            sys.stdout.write(
-                "\rTip: to show xlabel, specify " +
-                "'xlabel = ?' from input"
-                )
+            print("xlabel = ?")
         if "ylabel" in kwargs:
             if kwargs.get("ylabel") == None:
-                sys.stdout.write("\rNo ylabel")
+                print("ylabel == None")
             else:
                 ax.set_ylabel(kwargs.get("ylabel"))
         else:
-            sys.stdout.write(
-                "\rTip: to show ylabel, specify 'ylabel = ?' from input"
-                )
+            print("ylabel = ?")
         if "zlabel" in kwargs:
             if kwargs.get("zlabel") == None:
-                sys.stdout.write("\rNo zlabel")
+                print("zlabel == None")
             else:
                 ax.set_zlabel(kwargs.get("zlabel"))
         else:
-            sys.stdout.write(
-                "\rTip: to show zlabel, specify 'zlabel = ?' from input"
-                )
+            print("zlabel = ?")
 
     # range of axes
     if "xlim" in kwargs:
         if kwargs.get("xlim") == None:
-            sys.stdout.write("\rNo xlim")
+            print("xlim == None")
         else:
             ax.set_xlim(kwargs.get("xlim"))
     else:
-        sys.stdout.write(
-            "\rTip: to constrain x-axis, specify 'xlim = (min,max)' from input"
-            )
+        print("xlim = (min, max)")
     if "ylim" in kwargs:
         if kwargs.get("ylim") == None:
-            sys.stdout.write("\rNo ylim")
+            print("ylim == None")
         else:
             ax.set_ylim(kwargs.get("ylim"))
     else:
-        sys.stdout.write(
-            "\rTip: to constrain y-axis, specify 'ylim = (min,max)' from input"
-            )
+        print("ylim = (min, max)")
     if "zlim" in kwargs:
         if kwargs.get("zlim") == None:
-            sys.stdout.write("\rNo zlim")
+            print("zlim == None")
         else:
             ax.set_zlim(kwargs.get("zlim"))
     else:
-        sys.stdout.write(
-            "\rTip: to constrain z-axis, specify 'zlim = (min,max)' from input"
-            )
+        print("zlim = (min, max)")
 
     # colorbar
     if "plot_corlorbar" in kwargs:
         if kwargs.get("plot_corlorbar"):
-            if "setup_boundaries" in kwargs:
-                fig.colorbar(surf, boundaries=kwargs.get("setup_boundaries"))
+            if "colorbar_edges" in kwargs:
+                fig.colorbar(surf, boundaries=kwargs.get("colorbar_edges"))
             else:
-                sys.stdout.write(
-                    "\rTip: to set boundaries for colorbar, " +
-                    "specify 'setup_boundaries = np.linspace(min,max)' " +
-                    "from input"
-                    )
+                print("colorbar_edges = np.linspace(min, max)")
                 fig.colorbar(surf)
     else:
-        sys.stdout.write(
-            "\rTip: to plot colorbar, specify " +
-            "'plot_corlorbar = True' from input"
-            )
-    sys.stdout.flush()
+        print("plot_corlorbar = True")
 

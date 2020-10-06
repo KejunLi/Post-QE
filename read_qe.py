@@ -6,7 +6,7 @@ import os
 import re
 import scipy.constants as spc
 
-class qe_out:
+class qe_out(object):
     """
     =---------------------------------------------------------------------------
     +   1. Constructor
@@ -184,47 +184,34 @@ class qe_out:
                 self.scf_cycle += 1
         self.show_details = show_details
         if show_details:
-            sys.stdout.write("\rQuantum Espresso\n")
-            sys.stdout.write(
-                "Atomic species: {}\n".format(self.atomic_species)
-            )
-            sys.stdout.write(
-                "Number of atoms: {}\n".format(str(self.nat))
-            )
-            sys.stdout.write(
-                "Number of atomic types: {}\n".format(str(self.ntyp))
-            )
-            sys.stdout.write(
-                "Number of K points in irreducible Brilloin zone: {}\n"
+            print("----------------Quantum Espresso----------------")
+            print("Atomic species: {}".format(self.atomic_species))
+            print("Number of atoms: {}".format(str(self.nat)))
+            print("Number of atomic types: {}".format(str(self.ntyp)))
+            print(
+                "Number of K points in irreducible Brilloin zone: {}"
                 .format(str(self.nk))
             )
-            sys.stdout.write(
-                "Number of bands: {}\n".format(str(self.nbnd))
-            )
-            sys.stdout.write(
-                "Kinetic-energy cutoff (ecutwfc): {} Ry\n"
+            print("Number of bands: {}".format(str(self.nbnd)))
+            print(
+                "Kinetic-energy cutoff (ecutwfc): {} Ry"
                 .format(str(self.ecutwfc))
             )
-            sys.stdout.write(
-                "Spin polarization: {}\n".format(self.spinpol)
-            )
-            sys.stdout.write("Spin-orbit coupling: {}\n".format(self.soc))
+            print("Spin polarization: {}".format(self.spinpol))
+            print("Spin-orbit coupling: {}".format(self.soc))
 
             if self.spinpol and self.up_ne != 0:
-                sys.stdout.write(
-                    "Number of electrons: {} (up: {}, down: {})\n"
+                print(
+                    "Number of electrons: {} (up: {}, down: {})"
                     .format(str(self.ne), str(self.up_ne), str(self.dn_ne))
                 )
             elif self.spinpol and self.up_ne == 0:
-                sys.stdout.write(
-                    "Number of electrons: {} (Input has no 'nspin=2')\n"
+                print(
+                    "Number of electrons: {} (Input has no 'nspin=2')"
                     .format(str(self.ne))
                 )
             else:
-                sys.stdout.write(
-                    "Number of electrons: {}\n".format(str(self.ne))
-                )
-            sys.stdout.flush()
+                print("Number of electrons: {}".format(str(self.ne)))
 
 
     def read_etot(self):
@@ -252,10 +239,7 @@ class qe_out:
         if self.final_energy == 0 and len(self.etot) != 0:
             self.final_energy = self.etot[-1]
         if self.show_details:
-            sys.stdout.write(
-                "Final energy = {} eV\n".format(self.final_energy)
-            )
-            sys.stdout.flush()
+            print("Final energy = {} eV".format(self.final_energy))
 
 
     def read_eigenenergies(self):
@@ -358,8 +342,8 @@ class qe_out:
                 self.up_ne = int(np.sum(self.occ_up[0, :]))
                 self.dn_ne = int(np.sum(self.occ_dn[0, :]))
                 if self.show_details:
-                    sys.stdout.write(
-                        "Number of electrons: {} (up: {}, down: {})\n"\
+                    print(
+                        "Number of electrons: {} (up: {}, down: {})"
                         .format(str(self.ne), str(self.up_ne), str(self.dn_ne))
                     )
 
@@ -467,12 +451,11 @@ class qe_out:
                 dir_channel = "both spin-up and spin-down (spin degenerate)"
 
             if self.show_details:
-                sys.stdout.write(
-                    "The indirect gap is in {} channel.\n"
-                    .format(indir_channel)
+                print(
+                    "The indirect gap is in {} channel.".format(indir_channel)
                 )
-                sys.stdout.write(
-                    "The smallest direct gap is in {} channel.\n"
+                print(
+                    "The smallest direct gap is in {} channel."
                     .format(dir_channel)
                 )
 
@@ -524,26 +507,23 @@ class qe_out:
         k_vbm = self.kpts_cryst_coord[index_k_vbm]
         
         if self.show_details:
-            sys.stdout.write(
-                "CBM = {} eV is at No.{} k-point: {}\n"
+            print(
+                "CBM = {} eV is at No.{} k-point: {}"
                 .format(cbm, index_k_cbm+1, k_cbm)
             )
-            sys.stdout.write(
-                "VBM = {} eV is at No.{} k-point: {}\n"
+            print(
+                "VBM = {} eV is at No.{} k-point: {}"
                 .format(vbm, index_k_vbm+1, k_vbm)
             )
-            sys.stdout.write(
-                "The indirect bandgap = {} eV\n".format(self.indirect_gap)
-            )
-            sys.stdout.write(
-                "The smallest direct bandgap = {} eV at k-point: {}\n".format(
+            print("The indirect bandgap = {} eV".format(self.indirect_gap))
+            print(
+                "The smallest direct bandgap = {} eV at k-point: {}".format(
                     np.min(self.direct_gap), 
                     kpts[
                         np.where(self.direct_gap == np.min(self.direct_gap))[0]
                     ] # more than one smallest direct bandgap, e.g. MoS2
                 )
             )
-            sys.stdout.flush()
 
 
     def read_charge(self):
@@ -622,10 +602,7 @@ class qe_out:
                     self.atoms[j] = re.sub(r"[^a-zA-Z]", "", self.atomsfull[j])
                     self.atomic_pos[j] = self.lines[i+6+j].strip().split()[1:4]
         if not is_geometry_optimized:
-            sys.stdout.write(
-                "This is a single-point calculation (scf or nscf).\n"
-            )
-            sys.stdout.flush()
+            print("This is a single-point calculation (scf or nscf).")
         # The following converts the fractional crystal coordinates to
         # cartesian coordinates in angstrom
         self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
@@ -666,12 +643,13 @@ class qe_out:
                 self.wall_time += float(time[i+num]) * 60
             else:
                 self.wall_time += float(time[i+num])
+        print("Calculation time: {} s".format(self.wall_time))
 
 
 
 #------------------------------------------------------------------------------#
 
-class qe_in:
+class qe_in(object):
     """
     =---------------------------------------------------------------------------
     +   1. Constructor
@@ -799,7 +777,7 @@ def read_vac(dir_f=".avg.out"):
 
 #------------------------------------------------------------------------------#
     
-class band_out_and_band_dat:
+class band_out_and_band_dat(object):
     def __init__(self, dir_dat="bands.dat", dir_out="bands.out"):
         bands_dat = open(dir_dat, "r")
         self.dat_lines = bands_dat.readlines()
@@ -912,7 +890,7 @@ class band_out_and_band_dat:
     
 #------------------------------------------------------------------------------#
 
-class qe_bands:
+class qe_bands(object):
     """
     =---------------------------------------------------------------------------
     +   1. Constructor
@@ -1036,47 +1014,34 @@ class qe_bands:
         
         self.show_details = show_details
         if show_details:
-            sys.stdout.write("\rQuantum Espresso bands.x\n")
-            sys.stdout.write(
-                "Atomic species: {}\n".format(self.atomic_species)
-            )
-            sys.stdout.write(
-                "Number of atoms: {}\n".format(str(self.nat))
-            )
-            sys.stdout.write(
-                "Number of atomic types: {}\n".format(str(self.ntyp))
-            )
-            sys.stdout.write(
-                "Number of K points in irreducible Brilloin zone: {}\n"
+            print("\rQuantum Espresso bands.x")
+            print("Atomic species: {}".format(self.atomic_species))
+            print("Number of atoms: {}".format(str(self.nat)))
+            print("Number of atomic types: {}".format(str(self.ntyp)))
+            print(
+                "Number of K points in irreducible Brilloin zone: {}"
                 .format(str(self.nk))
             )
-            sys.stdout.write(
-                "Number of bands: {}\n".format(str(self.nbnd))
-            )
-            sys.stdout.write(
-                "Kinetic-energy cutoff (ecutwfc): {} Ry\n"
+            print("Number of bands: {}".format(str(self.nbnd)))
+            print(
+                "Kinetic-energy cutoff (ecutwfc): {} Ry"
                 .format(str(self.ecutwfc))
             )
-            sys.stdout.write(
-                "Spin polarization: {}\n".format(self.spinpol)
-            )
-            sys.stdout.write("Spin-orbit coupling: {}\n".format(self.soc))
+            print("Spin polarization: {}".format(self.spinpol))
+            print("Spin-orbit coupling: {}".format(self.soc))
 
             if self.spinpol and self.up_ne != 0:
-                sys.stdout.write(
-                    "Number of electrons: {} (up: {}, down: {})\n"
+                print(
+                    "Number of electrons: {} (up: {}, down: {})"
                     .format(str(self.ne), str(self.up_ne), str(self.dn_ne))
                 )
             elif self.spinpol and self.up_ne == 0:
-                sys.stdout.write(
-                    "Number of electrons: {} (Input has no 'nspin=2')\n"
+                print(
+                    "Number of electrons: {} (Input has no 'nspin=2')"
                     .format(str(self.ne))
                 )
             else:
-                sys.stdout.write(
-                    "Number of electrons: {}\n".format(str(self.ne))
-                )
-            sys.stdout.flush()
+                print("Number of electrons: {}".format(str(self.ne)))
 
 
     def read_eigenenergies(self):
