@@ -621,25 +621,40 @@ def plot_config_coord_diag(etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, **kwargs):
     print("\rtime_eff = {} s\n".format(time_eff))
     
 
-
 def view_3d(
-    atomic_positions, atomic_mass, transparent_background=True, 
+    atomic_pos, atomic_mass, transparent_background=True, 
     grid_off=True, axis_grid_off=False, **kwargs
     ):
     fig = plt.figure(
-        num=None, figsize=(8, 6), dpi=200, facecolor='w', edgecolor='k'
+        num=None, figsize=(8, 6), dpi=200, facecolor='w', edgecolor='w'
     )
-    ax = fig.add_subplot(1,1,1, projection="3d")
+    ax = fig.add_subplot(1, 1, 1, projection="3d")
     ax.scatter(
-        atomic_positions[:, 0], atomic_positions[:, 1], atomic_positions[:, 2], 
+        atomic_pos[:, 0], atomic_pos[:, 1], atomic_pos[:, 2], 
         zdir="z", s=np.exp(4*atomic_mass/np.amax(atomic_mass)), 
-        c=cm.rainbow(1-(atomic_mass/np.amax(atomic_mass))**6)
+        c=cm.viridis(1-(atomic_mass/np.amax(atomic_mass))**6)
     )
     surf = ax.plot_trisurf(
-        atomic_positions[:, 0], atomic_positions[:, 1], atomic_positions[:, 2], 
-        linewidth=0.2, antialiased=True, cmap=plt.cm.viridis, alpha=0.1
+        atomic_pos[:, 0], atomic_pos[:, 1], atomic_pos[:, 2], 
+        linewidth=0.2, antialiased=True, cmap=cm.viridis, alpha=0.0001
     )
     
+    # Fix aspect ratio
+    mean_x = np.mean(atomic_pos[:, 0])
+    mean_y = np.mean(atomic_pos[:, 1])
+    mean_z = np.mean(atomic_pos[:, 2])
+    max_x = np.amax(atomic_pos[:, 0])
+    min_x = np.amin(atomic_pos[:, 0])
+    max_y = np.amax(atomic_pos[:, 1]) 
+    min_y = np.amin(atomic_pos[:, 1])
+    max_z = np.amax(atomic_pos[:, 2])
+    min_z = np.amin(atomic_pos[:, 2])
+    max_range = np.amax([max_x-min_x, max_y-min_y, max_z-min_z])/ 2.0
+    
+    ax.set_xlim3d(mean_x - max_range, mean_x + max_range)
+    ax.set_ylim3d(mean_y - max_range, mean_y + max_range)
+    ax.set_zlim3d(mean_z - max_range, mean_z + max_range)
+
     
     print("Other optional inputs:")
     if transparent_background == True:
@@ -664,16 +679,18 @@ def view_3d(
         print("axis_grid_off = True")
 
     # below are kwargs
-    if "circle" in kwargs:
-        alpha = np.linspace(0.0, np.pi*2, 200)
-        (center, radius) = kwargs.get("circle")
-        x1 = radius * np.cos(alpha) + center[0]
-        y1 = radius * np.sin(alpha) + center[1]
-        z1 = center[2]
+    if "sphere" in kwargs:
+        phi = np.linspace(0, np.pi*2, 100)
+        theta = np.linspace(0, np.pi, 100)
+        stride = 2
+        (center, radius) = kwargs.get("sphere")
+        x = radius * np.outer(np.sin(theta), np.cos(phi)) + center[0]
+        y = radius * np.outer(np.sin(theta), np.sin(phi)) + center[1]
+        z = radius * np.outer(np.cos(theta), np.ones(np.size(phi))) + center[2]
         ax.scatter(center[0], center[1], center[2])
-        ax.plot(x1, y1, z1)
+        ax.plot_surface(x, y, z, alpha=0.1, cstride=stride, rstride=stride)
     else:
-        print("circle = (defect_center, radius)")
+        print("sphere = (defect_center, radius)")
 
     # title
     if "title" in kwargs:
@@ -764,28 +781,6 @@ def view_3d(
         else:
             print("zlabel = ?")
 
-    # range of axes
-    if "xlim" in kwargs:
-        if kwargs.get("xlim") == None:
-            print("xlim == None")
-        else:
-            ax.set_xlim(kwargs.get("xlim"))
-    else:
-        print("xlim = (min, max)")
-    if "ylim" in kwargs:
-        if kwargs.get("ylim") == None:
-            print("ylim == None")
-        else:
-            ax.set_ylim(kwargs.get("ylim"))
-    else:
-        print("ylim = (min, max)")
-    if "zlim" in kwargs:
-        if kwargs.get("zlim") == None:
-            print("zlim == None")
-        else:
-            ax.set_zlim(kwargs.get("zlim"))
-    else:
-        print("zlim = (min, max)")
 
     # colorbar
     if "plot_corlorbar" in kwargs:
