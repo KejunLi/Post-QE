@@ -8,7 +8,28 @@ from read_qe import qe_in, qe_bands
 plt.style.use("/home/likejun/work/github/plot_tools/styles/wamum")
 
 
-def nscf_for_bands_in_out(path_input="./relax.in", path_output="./relax.out"):
+def bands_kpath(path_input=None, path_output=None):
+    """
+    ++--------------------------------------------------------------------------
+    +   Input: path to Quantum Espresso pw.x input and output files
+    +   specifically, nscf_for_bands.in and nscf_for_bands.out
+    ++--------------------------------------------------------------------------
+    +   if not spin polarized
+    +   return
+    +   xcoords (coordinates of k path in x axis)
+    +   xcoords_of_hsymmpts (coordinates of special k points in x axis)
+    +   E (eigenvalues in all bands and at all k points)
+    +   bandsout.spinpol (boolean value, False)
+    ++--------------------------------------------------------------------------
+    +   if spin polarized
+    +   return
+    +   xcoords (coordinates of k path in x axis)
+    +   xcoords_of_hsymmpts (coordinates of special k points in x axis)
+    +   E_up (spin up eigenvalues in all bands and at all k points)
+    +   E_dn (spin down eigenvalues in all bands and at all k points)
+    +   bandsout.spinpol (boolean value, True)
+    ++--------------------------------------------------------------------------
+    """
     bandsin = qe_in(path_input)
     bandsin.read_kpts()
     bandsout = qe_bands(path_output)
@@ -41,7 +62,7 @@ if __name__ == "__main__":
     pathout = "/home/likejun/c2cn/6x6/nonradiative/bands/job_bands/nscf_for_bands.out"
     vac = 0.162307899*spc.physical_constants["Hartree energy in eV"][0]/2
     fermi = -2.4572
-    x = nscf_for_bands_in_out(path_input=pathin, path_output=pathout)
+    x = bands_kpath(path_input=pathin, path_output=pathout)
     if x[-1]:
         for i in range(x[2].shape[0]):
             if i == 0:
