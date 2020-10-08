@@ -8,7 +8,9 @@ import scipy.constants as spc
 
 class qe_out(object):
     """
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
+    +   Input: path to Quantum Espresso pw.x output file
+    ++--------------------------------------------------------------------------
     +   1. Constructor
     +   Attributes:
     +   self.lines (lines in the file)
@@ -33,12 +35,14 @@ class qe_out(object):
     +   self.scf_cycle (number of scf cycles)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   2. Method read_etot(self)
     +
     +   self.etot (total energy at each ionic step)
     +   self.etot[-1] is the final total energy
-    =---------------------------------------------------------------------------
+    +   
+    +   No return
+    ++--------------------------------------------------------------------------
     +   3. Method read_eigenenergies(self)
     +   Attributes:
     +   self.eigenE (eigenenergies, eV)
@@ -47,32 +51,32 @@ class qe_out(object):
     +   self.occ (occupations)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   4. Method read_bandgap(self)
     +   Attributes:
     +   self.direct_gap (direct bandgaps, eV)
     +   self.indirect_gap (indirect bandgap, eV)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   5. Method read_charge(self)
     +   Attributes:
     +   self.charge (number of unit charge carrier per site, unit e-)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   6. Method read_magnet(self)
     +   Attributes:
     +   self.magnet (magnetic moment per site, unit ?)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   7. Method read_forces(self)
     +   Attributes:
     +   self.forces (Forces acting on atoms, cartesian axes, Ry/au)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   8. Method read_atomic_pos(self)
     +   Attributes:
     +   self.atomsfull (full atomic name associated with each atomic position)
@@ -82,7 +86,7 @@ class qe_out(object):
     +   self.atomic_mass (atomic mass associated with each atom)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   9. Method read_miscellus(self)
     +   Attributes:
     +   self.cpu_time (the time during which the processor is actively working)
@@ -91,12 +95,14 @@ class qe_out(object):
     +   self.dense_grid
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     """
     def __init__(self, path, show_details=True):
         """
-        init method or constructor for initialization
-        read information in qe output file like scf.out and relax.out
+        ++----------------------------------------------------------------------
+        +   __init__ method or constructor for initialization
+        +   Read information in qe output file like scf.out and relax.out
+        ++----------------------------------------------------------------------
         """
         is_qe_output = False
         if os.path.exists(path):
@@ -182,6 +188,8 @@ class qe_out(object):
                 self.spinpol = True
             elif "End of self-consistent calculation" in line:
                 self.scf_cycle += 1
+
+
         self.show_details = show_details
         if show_details:
             print("----------------Quantum Espresso----------------")
@@ -212,13 +220,25 @@ class qe_out(object):
                 )
             else:
                 print("Number of electrons: {}".format(str(self.ne)))
-
+        
+        # call all the dynamic methods
+        self.read_etot()
+        self.read_eigenenergies()
+        self.read_bandgap()
+        self.read_charge()
+        self.read_magnet()
+        self.read_forces()
+        self.read_atomic_pos()
+        self.read_miscellus()
 
     def read_etot(self):
         """
-        This method reads qe output to find lines with total energy
-        and extract data from lines.
-        conditions can be "!", "!!" and "Final"
+        ++----------------------------------------------------------------------
+        +   This method reads qe output to find lines with total energy
+        +   and extract data from lines.
+        +   conditions can be "!", "!!" and "Final"
+        +   only works for PBE now
+        ++----------------------------------------------------------------------
         """
         Ry2eV = spc.physical_constants["Hartree energy in eV"][0]/2
         etot_count = 0
@@ -244,30 +264,31 @@ class qe_out(object):
 
     def read_eigenenergies(self):
         """
-        This method read eigenenergies at all K points
-        Case 1 (spin polarization is true):
-        ____                           ____
-        |                                 |
-        |       spin up eigenvalues       |
-        |   (spin up bands occupations)   |
-        :                                 :
-        :---------------------------------:
-        :                                 :
-        |      spin down eigenvalues      |
-        |  (spin down bands occupations)  |
-        |____                         ____| (self.nk*2 x self.nbnd)
-
-        Case 2 (spin polarization is false):
-        ____                           ____
-        |                                 |
-        |                                 |
-        |                                 |
-        :          eigenenergies          :
-        :                                 :
-        :       (bands occupations)       :
-        |                                 |
-        |                                 |
-        |____                         ____| (self.nk x self.nbnd)
+        ++----------------------------------------------------------------------
+        +   This method read eigenenergies at all k points
+        +   Case 1 (spin polarization is true):
+        +   ____                           ____
+        +   |                                 |
+        +   |       spin up eigenvalues       |
+        +   |   (spin up bands occupations)   |
+        +   :                                 :
+        +   :---------------------------------:
+        +   :                                 :
+        +   |      spin down eigenvalues      |
+        +   |  (spin down bands occupations)  |
+        +   |____                         ____| (self.nk*2 x self.nbnd)
+        +
+        +   Case 2 (spin polarization is false):
+        +   ____                           ____
+        +   |                                 |
+        +   |                                 |
+        +   :          eigenenergies          :
+        +   :                                 :
+        +   :       (bands occupations)       :
+        +   |                                 |
+        +   |____                         ____| (self.nk x self.nbnd)
+        +
+        ++----------------------------------------------------------------------
         """
         if self.spinpol:
             # In this case, self.eigenE[0:self.nk, :] are spin up eigenenergies,
@@ -350,30 +371,25 @@ class qe_out(object):
 
     def read_bandgap(self):
         """
-        This method reads direct bandgaps at all K points
-        Case 1 (spin polarization is true):
-        ____                           ____
-        |                                 |
-        |     spin up direct bandgaps     |
-        |                                 |
-        :                                 :
-        :---------------------------------:
-        :                                 :
-        |                                 |
-        |    spin down direct bandgaps    |
-        |____                         ____| (self.nk*2 x 1)
-
-        Case 2 (spin polarization is false):
-        ____                           ____
-        |                                 |
-        |                                 |
-        :                                 :
-        :        direct bandgaps          :
-        :                                 :
-        |                                 |
-        |____                         ____| (self.nk x 1)
-
-        and indirect bandgap
+        ++----------------------------------------------------------------------
+        +   This method reads direct bandgaps at all k points
+        +   should be called after self.read_eigenenergies()
+        +   Case 1 (spin polarization is true):
+        +   ____                           ____
+        +   |                                 |
+        +   |     spin up direct bandgaps     |
+        +   :---------------------------------:
+        +   |    spin down direct bandgaps    |
+        +   |____                         ____| (self.nk*2 x 1)
+        +
+        +   Case 2 (spin polarization is false):
+        +   ____                           ____
+        +   |                                 |
+        +   :        direct bandgaps          :
+        +   |____                         ____| (self.nk x 1)
+        +
+        +   and indirect bandgap
+        ++----------------------------------------------------------------------
         """
         if self.spinpol:    # spin polarized
             nk_spin = self.nk * 2
@@ -527,6 +543,11 @@ class qe_out(object):
 
 
     def read_charge(self):
+        """
+        ++----------------------------------------------------------------------
+        +   This method reads the charge after convergence
+        ++----------------------------------------------------------------------
+        """
         self.charge = np.zeros(self.nat)
         num_scf = self.scf_cycle
         for i, line in enumerate(self.lines):
@@ -541,6 +562,11 @@ class qe_out(object):
 
 
     def read_magnet(self):
+        """
+        ++----------------------------------------------------------------------
+        +   This method reads the magnetic moment after convergence
+        ++----------------------------------------------------------------------
+        """
         self.magn = np.zeros(self.nat)
         num_scf = self.scf_cycle
         for i, line in enumerate(self.lines):
@@ -555,6 +581,11 @@ class qe_out(object):
 
 
     def read_forces(self):
+        """
+        ++----------------------------------------------------------------------
+        +   This method reads the forces after convergence
+        ++----------------------------------------------------------------------
+        """
         self.forces = np.zeros((self.nat, 3)) # unit 
         num_scf = self.scf_cycle
         for i, line in enumerate(self.lines):
@@ -570,15 +601,18 @@ class qe_out(object):
 
     def read_atomic_pos(self):
         """
-        This method reads the latest updated atomic positions
-        ____                           ____
-        |                                 |
-        :        atomic positions         :
-        |____                         ____| (self.nat x 1)
-        ____                           ____
-        |                                 |
-        :           atomic mass           :
-        |____                         ____| (self.nat x 1)
+        ++----------------------------------------------------------------------
+        +   This method reads the latest updated atomic positions
+        +   ____                           ____
+        +   |                                 |
+        +   :        atomic positions         :
+        +   |____                         ____| (self.nat x 1)
+        +   ____                           ____
+        +   |                                 |
+        +   :           atomic mass           :
+        +   |____                         ____| (self.nat x 1)
+        +
+        ++----------------------------------------------------------------------
         """
         self.atomsfull = np.zeros(self.nat, dtype="U4")
         self.atoms = np.zeros(self.nat, dtype="U4")
@@ -643,7 +677,8 @@ class qe_out(object):
                 self.wall_time += float(time[i+num]) * 60
             else:
                 self.wall_time += float(time[i+num])
-        print("Calculation time: {} s".format(self.wall_time))
+        if self.show_details:
+            print("Calculation time: {} s".format(self.wall_time))
 
 
 
@@ -651,7 +686,9 @@ class qe_out(object):
 
 class qe_in(object):
     """
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
+    +   Input: path to Quantum Espresso pw.x input file
+    ++--------------------------------------------------------------------------
     +   1. Constructor
     +   Attributes
     +   self.fname (specific directory to file)
@@ -660,7 +697,7 @@ class qe_in(object):
     +   self.lines (lines in the file)
     +   self.nat (number of atoms)
     +   self.ntyp (number of atomic types)
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   2. Method read_atomic_pos(self)
     +   self.atoms (atomic name associated with each atomic position)
     +   self.atomic_pos (atomic positions in fractional crystal coordinates)
@@ -668,7 +705,7 @@ class qe_in(object):
     +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     """
     def __init__(self, path):
         is_qe_input = False
@@ -691,17 +728,14 @@ class qe_in(object):
 
     def read_atomic_pos(self):
         """
-        This method reads the latest updated atomic positions
-        ____                           ____
-        |                                 |
-        |                                 |
-        |                                 |
-        :                                 :
-        :        atomic positions         :
-        :                                 :
-        |                                 |
-        |                                 |
-        |____                         ____| (self.nat x 1)
+        ++----------------------------------------------------------------------
+        +   This method reads the input atomic positions
+        +   ____                           ____
+        +   |                                 |
+        +   :        atomic positions         :
+        +   |____                         ____| (self.nat x 1)
+        +
+        ++----------------------------------------------------------------------
         """
         self.atoms = np.zeros(self.nat, dtype="U4")
         self.atomic_pos = np.zeros((self.nat, 3))
@@ -725,7 +759,9 @@ class qe_in(object):
     
     def read_kpts(self):
         """
-        This method reads the k points sampling
+        ++----------------------------------------------------------------------
+        +   This method reads the k points sampling
+        ++----------------------------------------------------------------------
         """
         for i, line in enumerate(self.lines):
             if "K_POINTS" and "automatic" in line:
@@ -747,12 +783,12 @@ class qe_in(object):
 
 def read_vac(dir_f=".avg.out"):
     """
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   Read electrostatic potential file avg.out
     +   electrostatic potential data start from line 23 and stop at line -10
     +   z: positions in z of cell (angstrom)
     +   vac: vacuum electrostatic potential (eV)
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     """
     f = open(dir_f, "r")
     lines = f.readlines()
@@ -814,17 +850,18 @@ class band_out_and_band_dat(object):
     
     def read_bands_kpts(self):
         """
-        =-----------------------------------------------------------------------
+        ++----------------------------------------------------------------------
         +   Read band structure data file bands.dat
-        ____                           ____
-        |                                 |
-        :             k_points            :
-        |____                         ____| (nks x 3)
-        ____                           ____
-        |                                 |
-        :          eigen energies         :
-        |____                         ____| (nks x nbnd)
-        =-----------------------------------------------------------------------
+        +   ____                           ____
+        +   |                                 |
+        +   :             k_points            :
+        +   |____                         ____| (nks x 3)
+        +   ____                           ____
+        +   |                                 |
+        +   :          eigen energies         :
+        +   |____                         ____| (nks x nbnd)
+        +
+        ++----------------------------------------------------------------------
         """
         self.kpts = np.zeros((self.nks, 3))
         self.eigenE = np.zeros((self.nks, self.nbnd))
@@ -892,7 +929,10 @@ class band_out_and_band_dat(object):
 
 class qe_bands(object):
     """
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
+    +   Input: path to Quantum Espresso pw.x output file
+    +   specifically, nscf_for_bands.out
+    ++--------------------------------------------------------------------------
     +   1. Constructor
     +   Attributes:
     +   self.lines (lines in the file)
@@ -916,14 +956,13 @@ class qe_bands(object):
     +   self.soc (is spin-orbit coupling?)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     +   2. Method read_eigenenergies(self)
     +   Attributes:
     +   self.eigenE (eigenenergies, eV)
-    +   self.occ (occupations)
     +
     +   No return
-    =---------------------------------------------------------------------------
+    ++--------------------------------------------------------------------------
     """
     def __init__(self, path, show_details=True):
         """
@@ -1046,24 +1085,31 @@ class qe_bands(object):
 
     def read_eigenenergies(self):
         """
-        This method read eigenenergies at all K points
-        Case 1 (spin polarization is true):
-        ____                           ____
-        |                                 |
-        |       spin up eigenvalues       |
-        :                                 :
-        :---------------------------------:
-        :                                 :
-        |      spin down eigenvalues      |
-        |____                         ____| (self.nk*2 x self.nbnd)
-
-        Case 2 (spin polarization is false):
-        ____                           ____
-        |                                 |
-        |                                 |
-        :          eigenenergies          :
-        |                                 |
-        |____                         ____| (self.nk x self.nbnd)
+        ++----------------------------------------------------------------------
+        +   This method read eigenenergies at all k points
+        +   Case 1 (spin polarization is true):
+        +   ____                           ____
+        +   |                                 |
+        +   |       spin up eigenvalues       |
+        +   |   (spin up bands occupations)   |
+        +   :                                 :
+        +   :---------------------------------:
+        +   :                                 :
+        +   |      spin down eigenvalues      |
+        +   |  (spin down bands occupations)  |
+        +   |____                         ____| (self.nk*2 x self.nbnd)
+        +
+        +   Case 2 (spin polarization is false):
+        +   ____                           ____
+        +   |                                 |
+        +   |                                 |
+        +   :          eigenenergies          :
+        +   :                                 :
+        +   :       (bands occupations)       :
+        +   |                                 |
+        +   |____                         ____| (self.nk x self.nbnd)
+        +
+        ++----------------------------------------------------------------------
         """
         if self.spinpol:
             # In this case, self.eigenE[0:self.nk, :] are spin up eigenenergies,
@@ -1075,7 +1121,6 @@ class qe_bands(object):
         self.eigenE = np.zeros((nk_spin, self.nbnd))
         self.eigenE_up = np.zeros((self.nk, self.nbnd))
         self.eigenE_dn = np.zeros((self.nk, self.nbnd))
-        self.occ = np.zeros((nk_spin, self.nbnd))
         int_multi_8 = True
         k_counted = 0
 
@@ -1116,11 +1161,3 @@ class qe_bands(object):
 if __name__ == "__main__":
     path = os.getcwd()
     qe = qe_out(path, show_details=True)
-    qe.read_etot()
-    qe.read_eigenenergies()
-    qe.read_bandgap()
-    qe.read_atomic_pos()
-    qe.read_forces()
-    qe.read_magnet()
-    qe.read_charge()
-    qe.read_miscellus()
