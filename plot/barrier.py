@@ -6,7 +6,8 @@ import sys
 import os
 import scipy.constants as spc
 sys.path.insert(0, "/home/likejun/work/github/qe_post_processing")
-from read_qe import qe_in, qe_out
+from read_qein import qe_in
+from read_qeout import qe_out
 plt.style.use("/home/likejun/work/github/styles/wamum")
 
 

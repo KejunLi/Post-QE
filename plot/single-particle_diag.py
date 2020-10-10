@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, "/home/likejun/work/github/qe_post_processing")
 sys.path.insert(0, "/home/likejun/work/github/yambo_post_processing")
 from plot_tools import plot_sg_diag
-import read_qe
+import read_qeout
 
 
 plt.style.use("/home/likejun/work/github/styles/sg-diag")

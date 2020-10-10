@@ -4,7 +4,8 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import scipy.constants as spc
-from read_qe import qe_in, qe_bands
+from read_qein import qe_in
+from read_qeout import qe_bands
 plt.style.use("/home/likejun/work/github/plot_tools/styles/wamum")
 
 

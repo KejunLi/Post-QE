@@ -175,7 +175,7 @@ class cstr_atoms(object):
                         else:
                             # constain atoms and
                             # decrease the weight of constraint atoms
-                            self.cubes_mass[i, j, k, l] /=10
+                            self.cubes_mass[i, j, k, l] /=2
 
         
     def cstr_atoms(self):
@@ -192,7 +192,7 @@ class cstr_atoms(object):
                 pass
             else:
                 # constain atoms and decrease the weight of constraint atoms
-                self.atomic_mass[i] /=10
+                self.atomic_mass[i] /=2
                 self.if_pos[i, :] = zero_force
         self.atomic_pos_if_pos = np.concatenate(
             (self.atomic_pos, self.if_pos), axis=1
@@ -203,4 +203,4 @@ class cstr_atoms(object):
 
 
 if __name__ == "__main__":
-    print()
+    print(u"\u2642?????")

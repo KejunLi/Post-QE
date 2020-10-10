@@ -7,11 +7,12 @@ import os
 import sys
 sys.path.insert(0, "/home/likejun/work/github/qe_post_processing")
 from plot_tools import plot_config_coord_diag
-from read_qe import qe_in, qe_out
+from read_qein import qe_in
+from read_qeout import qe_out
 
 
 ################################### Input ######################################
-path = "/home/likejun/work/carbon_dimer/monolayer/9x9/nonradiative"
+path = "/home/likejun/work/carbon_dimer/fix_atoms_r5A/7x7/nonradiative"
 xlim = (-0.8, 1)
 ylim = (-0.1, 5)
 arrows = {"left_arrow_shift": 0.15, "right_arrow_shift":0.2,
@@ -72,19 +73,19 @@ dQ_2 = dQ_1
 if style == 1:
     plot_config_coord_diag(
         etot_1, etot_2, dQ_1, dQ_2, xlim, ylim
-        )
+    )
 elif style == 2:
     plot_config_coord_diag(
         etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, labels=labels
-        )
+    )
 elif style == 3:
     plot_config_coord_diag(
         etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, arrows=arrows
-        )
+    )
 else:
     plot_config_coord_diag(
         etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, arrows=arrows, labels=labels
-        )
+    )
 
 
 plt.xlabel("$\mathrm{\u0394Q~(amu^{1/2}\AA)}$")

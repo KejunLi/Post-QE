@@ -13,13 +13,15 @@ import scipy.constants as spc
 
 def var_color(color, brightness_offset):
     """
-    lightens the given color by multiplying (1-luminosity)
-    by the given amount.
-    Input can be matplotlib color string, hex string, or RGB tuple.
-    Examples:
-    var_color("g", 0.3)
-    var_color("#F034A3", 0.6)
-    var_color((0.3,0.55,0.1), 0.5)
+    ++--------------------------------------------------------------------------
+    +   lightens the given color by multiplying (1-luminosity)
+    +   by the given amount.
+    +   Input can be matplotlib color string, hex string, or RGB tuple.
+    +   Examples:
+    +   var_color("g", 0.3)
+    +   var_color("#F034A3", 0.6)
+    +   var_color((0.3,0.55,0.1), 0.5)
+    ++--------------------------------------------------------------------------
     """
     try:
         c = mc.cnames[color]
@@ -32,7 +34,7 @@ def var_color(color, brightness_offset):
 
 def cfe(*args):
     """
-    ============================================================================
+    ++--------------------------------------------------------------------------
     +   Charge formation energy (CFE) and charge transition level (CTL)
     +   E_f = Etot_xq - Etot_bulk + \sum(n\mu) + q(vbm+\mu_e) + E_corr
     +   arg = [Etot_xq, Etot_bulk, q, vbm, cbm, E_corr]
@@ -43,7 +45,7 @@ def cfe(*args):
     +   q: number of charge carriers
     +   \mu_e: electron chemical potential, 0 < \mu < cbm-vbm
     +   E_corr: correction term
-    ============================================================================
+    ++--------------------------------------------------------------------------
     """
     mu_e = np.zeros((len(args), 1000), dtype="float")
     E_f = np.zeros((len(args), 1000), dtype="float")
@@ -57,7 +59,7 @@ def cfe(*args):
 
 def plot_ctl(*args):
     """
-    ============================================================================
+    ++--------------------------------------------------------------------------
     +   Default format of input:
     +   plot_sg_diagram(*args)
     +   args = [arg[0], arg[1], ...]
@@ -69,7 +71,7 @@ def plot_ctl(*args):
     +   arg[5]: plot range in y-axis
     +   arg[6]: labels
     +   arg[7]: title
-    ============================================================================
+    ++--------------------------------------------------------------------------
     """
     fig, ax = plt.subplots(nrows=1, ncols=1)
     sections = len(args)
@@ -130,7 +132,7 @@ def plot_ctl(*args):
 
 def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
     """
-    ============================================================================
+    ++--------------------------------------------------------------------------
     +   Default format of input:
     +   plot_sg_diagram(*args)
     +   args = [arg1, arg2, ...]
@@ -157,7 +159,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
     +   mode 1: combine all single-particle diagrams together (default)
     +   mode 2: separately plot each single-particle diagram
     +   show_values: show levels, occupations and eigenvalues (defaul True)
-    ============================================================================
+    ++--------------------------------------------------------------------------
     """
     if mode == 1:
         fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -447,7 +449,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
 
 def plot_config_coord_diag(etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, **kwargs):
     """
-    ============================================================================
+    ++--------------------------------------------------------------------------
     +   etot_1: the arrays of total energies of state 1
     +   etot_2: the arrays of total energies of state 2
     +   dQ_1: change of nuclear coordinate of state 1
@@ -459,7 +461,7 @@ def plot_config_coord_diag(etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, **kwargs):
                 "elongate": val, "E_zpl_shift": value, "E_rel_shift": val}
     +   labels == {"label1": {"x": xval, "y": yval, "name": "??"},
                 "label2": {"x": xval, "y": yval, "name": "??"}}
-    ============================================================================
+    ++--------------------------------------------------------------------------
     """
     ev2J = spc.physical_constants["Hartree energy in eV"][0]/2
     kB = spc.Boltzmann
@@ -703,7 +705,7 @@ def view_3d(
 
     # about view directions and axes labels
     if "view_direction" in kwargs:
-        if kwargs.get("view_direction") == "front_view":
+        if kwargs.get("view_direction") == "front":
             ax.view_init(azim=-90, elev=0)
             ax.w_yaxis.line.set_lw(0.)
             ax.set_yticks([])
@@ -721,7 +723,7 @@ def view_3d(
                     ax.set_zlabel(kwargs.get("zlabel"))
             else:
                 print("zlabel = ?")
-        elif kwargs.get("view_direction") == "top_view":
+        elif kwargs.get("view_direction") == "top":
             ax.view_init(azim=-90, elev=90)
             ax.w_zaxis.line.set_lw(0.)
             ax.set_zticks([])
@@ -758,7 +760,7 @@ def view_3d(
             else:
                 print("zlabel = ?")
     else:
-        print("view_direction = 'top_view'")
+        print("view_direction = 'top'")
         if "xlabel" in kwargs:
             if kwargs.get("xlabel") == None:
                 print("xlabel == None")
