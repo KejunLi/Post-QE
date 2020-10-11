@@ -46,13 +46,53 @@ class qe_in(object):
 
         self.lines = qe_input.readlines()
         for i, line in enumerate(self.lines):
+            if "ibrav" in line:
+                self.ibrav = int(re.findall(r"[+-]?\d+", line)[0])
             if "nat" in line:
                 self.nat = int(re.findall(r"[+-]?\d+", line)[0])
             elif "ntyp" in line:
                 self.ntyp = int(re.findall(r"[+-]?\d+", line)[0])
 
+        self.read_cryst_axes()
         self.read_atomic_pos()
         self.read_kpts()
+
+    def read_cryst_axes(self):
+        self.cryst_axes = np.zeros((3, 3))
+        Bohr2Ang = spc.physical_constants["Bohr radius"][0]/1e-10
+
+        if self.ibrav == 0:
+            for i, line in enumerate(self.lines):
+                if "CELL_PARAMETERS" in line:
+                    for j in range(3):
+                        self.cryst_axes[j, :] = re.findall(
+                            r"[+-]?\d+\.\d*", self.lines[i+1+j]
+                        )
+                else:
+                    pass
+        elif self.ibrav == 4:
+            for i, line in enumerate(self.lines):
+                if "celldm(1)" in line:
+                    celldm1 = float(re.findall(r"[+-]?\d+\.\d*", line)[1])
+                    a = celldm1 * Bohr2Ang
+                elif "celldm(3)" in line:
+                    celldm3 = float(re.findall(r"[+-]?\d+\.\d*", line)[1])
+                elif (
+                    re.match("a", line.strip()) and 
+                    len(re.findall("a", line.strip())) == 1
+                ):
+                    a = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+                elif (
+                    re.match("c", line.strip()) and 
+                    len(re.findall("c", line.strip())) == 1
+                ):
+                    c = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+                    break
+            self.cryst_axes[0, 0] = a
+            self.cryst_axes[1, 0] = -a * np.sin(np.pi/6)
+            self.cryst_axes[1, 1] = a * np.cos(np.pi/6)
+            self.cryst_axes[2, 2] = c
+
 
     def read_atomic_pos(self):
         """
@@ -68,14 +108,8 @@ class qe_in(object):
         self.atoms = np.zeros(self.nat, dtype="U4")
         self.atomic_pos = np.zeros((self.nat, 3))
         self.ap_cart_coord = np.zeros((self.nat, 3))
-        self.cryst_axes = np.zeros((3, 3))
         
         for i, line in enumerate(self.lines):
-            if "CELL_PARAMETERS" in line:
-                for j in range(3):
-                    self.cryst_axes[j, :] = re.findall(
-                        r"[+-]?\d+\.\d*", self.lines[i+1+j]
-                    )
             if "ATOMIC_POSITIONS" in line:
                 for j in range(self.nat):
                     self.atoms[j] = self.lines[i+1+j].strip().split()[0]
