@@ -71,6 +71,8 @@ class qe_in(object):
                 else:
                     pass
         elif self.ibrav == 4:
+            # the part of code assumes that celldm(1) shows up before celldm(3)
+            # and assume that a shows up before c
             for i, line in enumerate(self.lines):
                 if "celldm(1)" in line:
                     celldm1 = float(re.findall(r"[+-]?\d+\.\d*", line)[1])
