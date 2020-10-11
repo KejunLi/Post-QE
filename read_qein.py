@@ -77,6 +77,7 @@ class qe_in(object):
                     a = celldm1 * Bohr2Ang
                 elif "celldm(3)" in line:
                     celldm3 = float(re.findall(r"[+-]?\d+\.\d*", line)[1])
+                    c = a * celldm3
                 elif (
                     re.match("a", line.strip()) and 
                     len(re.findall("a", line.strip())) == 1
