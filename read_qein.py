@@ -82,15 +82,15 @@ class qe_in(object):
                     c = a * celldm3
                 elif (
                     re.match("a", line.strip()) and 
-                    len(re.findall("a", line.strip())) == 1
+                    not re.search(r"[b-zB-Z]", line.strip())
                 ):
                     a = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
                 elif (
                     re.match("c", line.strip()) and 
-                    len(re.findall("c", line.strip())) == 1
+                    not re.search(r"[a-bA-Bd-zD-Z]", line.strip())
                 ):
                     c = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
-                    break
+
             self.cryst_axes[0, 0] = a
             self.cryst_axes[1, 0] = -a * np.sin(np.pi/6)
             self.cryst_axes[1, 1] = a * np.cos(np.pi/6)
