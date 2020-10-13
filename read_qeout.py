@@ -156,8 +156,9 @@ class qe_out(object):
             elif "celldm(1)" in line: # lattic constant
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
-                celldm1 = \
+                celldm1 = (
                     float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Bohr2Ang
+                )
                 for j in range(3):
                     self.cryst_axes[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+4+j]
@@ -411,12 +412,14 @@ class qe_out(object):
             self.direct_gap = np.concatenate(
                 (self.direct_gap_up, self.direct_gap_dn)
             )
-            indirect_gap_up = \
-                    np.amin(self.eigenE_up[:, int(self.up_ne)]) - \
-                    np.amax(self.eigenE_up[:, int(self.up_ne-1)])
-            indirect_gap_dn = \
-                    np.amin(self.eigenE_dn[:, int(self.dn_ne)]) - \
-                    np.amax(self.eigenE_dn[:, int(self.dn_ne-1)])
+            indirect_gap_up = (
+                    np.amin(self.eigenE_up[:, int(self.up_ne)])
+                    - np.amax(self.eigenE_up[:, int(self.up_ne-1)])
+            )
+            indirect_gap_dn = (
+                    np.amin(self.eigenE_dn[:, int(self.dn_ne)])
+                    - np.amax(self.eigenE_dn[:, int(self.dn_ne-1)])
+            )
             self.indirect_gap = min(indirect_gap_up, indirect_gap_dn)
 
             # look for the k points where the direct, indrect band gaps and 
@@ -482,12 +485,14 @@ class qe_out(object):
                 assert self.nbnd > self.ne/2, "No empty band ゴ~ゴ~ゴ~ゴ~\n"
 
                 for i in range(self.nk):
-                    self.direct_gap[i] = self.eigenE[i, int(self.ne/2)] - \
-                                    self.eigenE[i, int(self.ne/2-1)]
+                    self.direct_gap[i] = (
+                        self.eigenE[i, int(self.ne/2)]
+                        - self.eigenE[i, int(self.ne/2-1)]
+                    )
 
                 self.indirect_gap = np.amin(
-                    np.amin(self.eigenE[:, int(self.ne/2)]) - \
-                    np.amax(self.eigenE[:, int(self.ne/2-1)])
+                    np.amin(self.eigenE[:, int(self.ne/2)])
+                    - np.amax(self.eigenE[:, int(self.ne/2-1)])
                 )
                 cbm = np.amin(self.eigenE[:, int(self.ne/2)])
                 vbm = np.amax(self.eigenE[:, int(self.ne/2-1)])
@@ -501,12 +506,14 @@ class qe_out(object):
                 assert self.nbnd > self.ne, "No empty band ゴ~ゴ~ゴ~ゴ~\n"
 
                 for i in range(self.nk):
-                    self.direct_gap[i] = self.eigenE[i, int(self.ne)] - \
-                                    self.eigenE[i, int(self.ne-1)]
+                    self.direct_gap[i] = (
+                        self.eigenE[i, int(self.ne)]
+                        - self.eigenE[i, int(self.ne-1)]
+                    )
 
                 self.indirect_gap = np.amin(
-                    np.amin(self.eigenE[:, int(self.ne)]) - \
-                    np.amax(self.eigenE[:, int(self.ne-1)])
+                    np.amin(self.eigenE[:, int(self.ne)])
+                    - np.amax(self.eigenE[:, int(self.ne-1)])
                 )
                 cbm = np.amin(self.eigenE[:, int(self.ne)])
                 vbm = np.amax(self.eigenE[:, int(self.ne-1)])
@@ -741,7 +748,7 @@ class band_out_and_band_dat(object):
         for line in self.out_lines:
             if "high-symmetry point: " in line and i < self.num_hsymmpts:
                 self.hsymmpts[i, :] = np.asarray(
-                        re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)[0:3]
+                    re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)[0:3]
                 )
                 self.xcoords[i] = float(
                     re.findall(r"[+-]?\d+\.\d*|[+-]?\d+", line)[3]
@@ -804,8 +811,7 @@ class band_out_and_band_dat(object):
         kpts = np.round(self.kpts, 3)
         for i, pts in enumerate(hsymmpts):
             for j, kpt in enumerate(kpts):
-                if kpt[0] == pts[0] and kpt[1] == pts[1] and \
-                    kpt[2] == pts[2]:
+                if kpt[0] == pts[0] and kpt[1] == pts[1] and kpt[2] == pts[2]:
                     if i == 0 and j == 0:
                         indexes_hsymmpts[i] = j
                         break
@@ -818,14 +824,18 @@ class band_out_and_band_dat(object):
         ii = 0
         for i in range(self.nks):
             if i <= indexes_hsymmpts[ii+1]:
-                self.xvals[i] = (self.xcoords[ii+1] - self.xcoords[ii]) \
-                    /(indexes_hsymmpts[ii+1] - indexes_hsymmpts[ii]) \
+                self.xvals[i] = (
+                    (self.xcoords[ii+1] - self.xcoords[ii])
+                    / (indexes_hsymmpts[ii+1] - indexes_hsymmpts[ii])
                     * (i - indexes_hsymmpts[ii]) + self.xcoords[ii]
+                )
             elif i > indexes_hsymmpts[ii+1] and ii < self.num_hsymmpts:
                 ii += 1
-                self.xvals[i] = (self.xcoords[ii+1] - self.xcoords[ii]) \
-                    /(indexes_hsymmpts[ii+1] - indexes_hsymmpts[ii]) \
+                self.xvals[i] = (
+                    (self.xcoords[ii+1] - self.xcoords[ii])
+                    / (indexes_hsymmpts[ii+1] - indexes_hsymmpts[ii])
                     * (i - indexes_hsymmpts[ii]) + self.xcoords[ii]
+                )
     
 #------------------------------------------------------------------------------#
 
@@ -922,8 +932,9 @@ class qe_bands(object):
             elif "celldm(1)" in line:
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
-                celldm1 = \
+                celldm1 = (
                     float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Bohr2Ang
+                )
                 for j in range(3):
                     self.cryst_axes[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+4+j]
