@@ -52,7 +52,7 @@ def cfe(*args):
     Etot_xq_corr = np.zeros(len(args), dtype="float")
     for i, arg in enumerate(args):
         mu_e[i, :] = np.linspace(0, arg[4]-arg[3], 1000)
-        E_f[i, :] = arg[0] - arg[1] + arg[2] * ( arg[3] + mu_e[i, :] ) + arg[5]
+        E_f[i, :] = arg[0] - arg[1] + arg[2] * (arg[3]+mu_e[i, :]) + arg[5]
         Etot_xq_corr[i] = arg[0] + arg[5]
     return(mu_e, E_f, Etot_xq_corr)
 
@@ -83,47 +83,45 @@ def plot_ctl(*args):
     coord_labels = np.zeros(sections, dtype=float)
     for i in range(num_lines):
         ax.axvline(
-            1.0/sections*(i+1), color="k", 
-            linestyle="solid", linewidth=0.8
-            )
+            1.0/sections * (i+1), color="k", linestyle="solid", linewidth=0.8
+        )
     for i in range(sections):
-        coord_labels[i] = bar_width * (i * 2 + 1)
+        coord_labels[i] = bar_width * (i*2 + 1)
     
     for i, arg in enumerate(args):
-        x = [(i+0.1)*bar_width*2, (i+0.9)*bar_width*2]
+        x = [(i+0.1) * bar_width*2, (i+0.9) * bar_width*2]
         E_tot_corr = np.asarray(arg[0]) + np.asarray(arg[1])
         y = E_tot_corr[:-1] - E_tot_corr[1:] - arg[2]
         for j in range(len(y)):
             ax.plot(x, [y[j], y[j]], linewidth=1, color='black')
             ax.text(
-                (i+0.1)*bar_width*2,
+                (i+0.1) * bar_width*2,
                 y[j],
                 arg[6][j],
                 horizontalalignment='center', 
                 verticalalignment='bottom'
-                )            
+            )            
         ax.fill_between(
-            np.array([i,i+1])*bar_width*2,  # x range to fill
+            np.array([i, i+1]) * bar_width*2,  # x range to fill
             [arg[4], arg[4]],               # lower limit of y; cbm
             [ylim_top, ylim_top],           # upper limit of y
             facecolor="tab:red",            # The fill color
             alpha=0.32,                     # Transparency of the fill
-            )
+        )
         ax.fill_between(
-            np.array([i,i+1])*bar_width*2,  # x range to fill
+            np.array([i, i+1]) * bar_width*2,  # x range to fill
             [ylim_bot, ylim_bot],           # lower limit of y
             [arg[3], arg[3]],               # upper limit of y; vbm
             facecolor="tab:blue",           # The fill color
             alpha=0.32                      # Transparency of the fill
-            )
+        )
     ax.set_xlim([0, 1])
     ax.set_ylim([ylim_bot, ylim_top])
     ax.set_ylabel("CTL (eV)")
     plt.xticks(coord_labels, list(np.array(args[:])[:, 7]))
     plt.subplots_adjust(
-        left=0.16, bottom=0.08, right=0.98, top=0.98,
-        wspace=None, hspace=None
-        )
+        left=0.16, bottom=0.08, right=0.98, top=0.98, wspace=None, hspace=None
+    )
         # end and save figure
     fig.savefig("ctl.pdf")
 
@@ -173,74 +171,74 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
         coord_labels = np.zeros(sections, dtype=float)
         for i in range(num_lines):
             ax.axvline(
-                1.0/sections*(i+1), color="k", 
+                1.0/sections * (i+1), color="k", 
                 linestyle="solid", linewidth=0.8
-                )
+            )
         for i in range(sections):
             coord_labels[i] = bar_width * (i * 2 + 1)
 
         for i, arg in enumerate(args):
             for j, yval in enumerate(arg[1]):   # spin up
-                x = [(i+0.18)*bar_width*2, (i+0.38)*bar_width*2]
+                x = [(i+0.18) * bar_width*2, (i+0.38) * bar_width*2]
                 y = [yval-arg[6], yval-arg[6]]
                 ax.plot(x, y, color='black')
                 # show levels' number, occupations and eigenvalues
                 if show_values:
                     if arg[2][j] == 1:  # occupied spin up states
                         ax.text(
-                            (i+0.1)*bar_width*2,
+                            (i+0.1) * bar_width*2,
                             yval-arg[6],    # referenced to vacuum
-                            str(arg[0][j])+"\u2b06|"+
-                            str((format(yval-arg[6], ".4f"))),
+                            str(arg[0][j]) + "\u2b06|"
+                            + str((format(yval-arg[6], ".4f"))),
                             fontsize=8,
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:   # unoccupied spin up states
                         ax.text(
                             (i+0.1)*bar_width*2,
                             yval-arg[6],    # referenced to vacuum
-                            str(arg[0][j])+"\u21e7|"+
-                            str((format(yval-arg[6], ".4f"))),
+                            str(arg[0][j]) + "\u21e7|"
+                            + str((format(yval-arg[6], ".4f"))),
                             fontsize=8,
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                 # not show levels' number, occupations and eigenvalues
                 else:
                     if arg[2][j] == 1:  # occupied spin down states
                         ax.text(
-                            (i+0.25+j%2*0.05)*bar_width*2,
+                            (i+0.25 + j%2 * 0.05) * bar_width*2,
                             yval-arg[6],    # referenced to vacuum
                             "\u2b06",
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:   # unoccupied spin down states
                         ax.text(
-                            (i+0.25+j%2*0.05)*bar_width*2,
+                            (i+0.25 + j%2 * 0.05) * bar_width*2,
                             yval-arg[6],    # referenced to vacuum
                             "\u21e7",
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
             for j, yval in enumerate(arg[4]):   # spin down
-                x = [(i+0.62)*bar_width*2, (i+0.82)*bar_width*2]
+                x = [(i+0.62) * bar_width*2, (i+0.82) * bar_width*2]
                 y = [yval-arg[6], yval-arg[6]]
                 ax.plot(x, y, color='black')
                 # show levels' number, occupations and eigenvalues
                 if show_values:
                     if arg[5][j] == 1:  # occupied spin down states
                         ax.text(
-                            (i+0.9)*bar_width*2,
+                            (i+0.9) * bar_width*2,
                             yval-arg[6],    # referenced to vacuum
                             str(arg[3][j])+"\u2b07|"+
                             str((format(yval-arg[6], ".4f"))),
@@ -249,10 +247,10 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:   # unoccupied spin down states
                         ax.text(
-                            (i+0.9)*bar_width*2,
+                            (i+0.9) * bar_width*2,
                             yval-arg[6],    # referenced to vacuum
                             str(arg[3][j])+"\u21e9|"+
                             str((format(yval-arg[6], ".4f"))),
@@ -261,44 +259,44 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                 # not show levels' number, occupations and eigenvalues
                 else:
                     if arg[5][j] == 1:  # occupied spin down states
                         ax.text(
-                            (i+0.7+j%2*0.05)*bar_width*2,
+                            (i+0.7 + j%2 * 0.05) * bar_width*2,
                             yval-arg[6],    # referenced to vacuum
                             "\u2b07",
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:   # unoccupied spin down states
                         ax.text(
-                            (i+0.7+j%2*0.05)*bar_width*2,
+                            (i+0.7 + j%2 * 0.05) * bar_width*2,
                             yval-arg[6],    # referenced to vacuum
                             "\u21e9",
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
             
             ax.fill_between(
-                np.array([i,i+1])*bar_width*2,  # x range to fill
+                np.array([i, i+1]) * bar_width*2,  # x range to fill
                 [arg[8], arg[8]],               # lower limit of y; cbm
                 [ylim_top, ylim_top],                       # upper limit of y
                 facecolor="tab:red",             # The fill color
                 alpha=0.32,                      # Transparency of the fill
-                )
+            )
             ax.fill_between(
-                np.array([i,i+1])*bar_width*2,  # x range to fill
+                np.array([i, i+1]) * bar_width*2,  # x range to fill
                 [ylim_bot, ylim_bot],                     # lower limit of y
                 [arg[7], arg[7]],               # upper limit of y; vbm
                 facecolor="tab:blue",               # The fill color
                 alpha=0.32                      # Transparency of the fill
-                )
+            )
         if "additional_label" in kwargs:
             texts = kwargs.get("additional_label")[0]
             coords = kwargs.get("additional_label")[1]
@@ -311,7 +309,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
         plt.subplots_adjust(
             left=0.08, bottom=0.08, right=0.98, top=0.98,
             wspace=None, hspace=None
-            )
+        )
     if mode == 2:
         fig, ax = plt.subplots(nrows=1, ncols=len(args))#, constrained_layout=True)
         for i, arg in enumerate(args):
@@ -325,48 +323,48 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                         ax[i].text(
                             0.1,
                             yval-arg[6],    # referenced to vacuum
-                            str(arg[0][j])+"\u2b06|"+
-                            str((format(yval-arg[6], ".4f"))),
+                            str(arg[0][j]) + "\u2b06|"
+                            + str((format(yval-arg[6], ".4f"))),
                             fontsize=8,
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:   # unoccupied spin up states
                         ax[i].text(
                             0.1,
                             yval-arg[6],
-                            str(arg[0][j])+"\u21e7|"+
-                            str((format(yval-arg[6], ".4f"))),
+                            str(arg[0][j]) + "\u21e7|"
+                            + str((format(yval-arg[6], ".4f"))),
                             fontsize=8,
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                 # not show levels' number, occupations and eigenvalues
                 else:
                     if arg[2][j] == 1:  # occupied spin down states
                         ax[i].text(
-                            0.25+j%2*0.05,
+                            0.25 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u2b06",
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:   # unoccupied spin down states
                         ax[i].text(
-                            0.25+j%2*0.05,
+                            0.25 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u21e7",
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
             for j, yval in enumerate(arg[4]):   # spin down
                 x = [0.55, 0.9]
                 y = [yval-arg[6], yval-arg[6]]
@@ -377,47 +375,47 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                         ax[i].text(
                             0.9,
                             yval-arg[6],    # referenced to vacuum
-                            str(arg[3][j])+"\u2b07|"+
-                            str((format(yval-arg[6], ".4f"))),
+                            str(arg[3][j]) + "\u2b07|"
+                            + str((format(yval-arg[6], ".4f"))),
                             fontsize=8,
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:   # unoccupied spin down states
                         ax[i].text(
                             0.9,
                             yval-arg[6],    # referenced to vacuum
-                            str(arg[3][j])+"\u21e9|"+
-                            str((format(yval-arg[6], ".4f"))),
+                            str(arg[3][j]) + "\u21e9|"
+                            + str((format(yval-arg[6], ".4f"))),
                             fontsize=8,
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                 # not show levels' number, occupations and eigenvalues
                 else:
                     if arg[5][j] == 1:  # occupied spin down states
                         ax[i].text(
-                            0.7+j%2*0.05,
+                            0.7 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u2b07",
                             family='cursive',   # font 'cursive' for arrows
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
                     else:
                         ax[i].text(
-                            0.7+j%2*0.05,
+                            0.7 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u21e9",
                             # font 'DejaVu Sans' for arrows
                             family='DejaVu Sans',
                             horizontalalignment='center', 
                             verticalalignment='center'
-                            )
+                        )
             ax[i].set_xlim([0, 1])
             ax[i].set_ylim(arg[9])
             ax[i].fill_between(
@@ -426,14 +424,14 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                 [np.amax(arg[9]), np.amax(arg[9])],      # upper limit of y
                 facecolor="tab:red",             # The fill color
                 alpha=0.32,                      # Transparency of the fill
-                )
+            )
             ax[i].fill_between(
                 np.array([0, 1]),  # x range to fill
                 [np.amin(arg[9]), np.amin(arg[9])],    # lower limit of y
                 [arg[7], arg[7]],               # upper limit of y; vbm
                 facecolor="tab:blue",               # The fill color
                 alpha=0.32                      # Transparency of the fill
-                )
+            )
             ax[i].xaxis.set_major_locator(plt.NullLocator())
             ax[0].set_ylabel("E (eV)")
             ax[i].set_title(arg[10])
@@ -441,7 +439,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
             plt.subplots_adjust(
                 left=0.08, bottom=0.02, right=0.98, top=0.9,
                 wspace=None, hspace=None
-                )
+            )
     # end and save figure
     fig.savefig("sg-diag.pdf")
 
@@ -531,75 +529,77 @@ def plot_config_coord_diag(etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, **kwargs):
     for i in range(len(x)):
         y_1[i] = quadratic_fct(
             x[i], fit_vals_1[0], fit_vals_1[1], fit_vals_1[2]
-            ) - min_etot
+        ) - min_etot
     for i in range(len(x)):
         y_2[i] = quadratic_fct(
             x[i], fit_vals_2[0], fit_vals_2[1], fit_vals_2[2]
-            ) - min_etot
+        ) - min_etot
 
     if "arrows" in kwargs:
         values = kwargs.get("arrows")
         plt.annotate(
             '', # text
             xy=(
-                x_of_min_etot-values["left_arrow_shift"],\
-                0-values["elongate"]
-                ), # the point (x, y) to annotate
+                x_of_min_etot - values["left_arrow_shift"],
+                0 - values["elongate"]
+            ), # the point (x, y) to annotate
             xytext=(
-                x_of_min_etot-values["left_arrow_shift"],\
-                E_zpl_fit+values["elongate"]
-                ), # the position to place the text at. If None, defaults to (x, y)
+                x_of_min_etot - values["left_arrow_shift"],
+                E_zpl_fit + values["elongate"]
+            ), # the position to place the text at. If None, defaults to (x, y)
             arrowprops=dict(arrowstyle="<|-|>", color = "k")
-            )
+        )
         plt.hlines(
             E_rel_fit, x_of_sec_min_etot,
-            x_of_sec_min_etot+values["right_arrow_shift"],
+            x_of_sec_min_etot + values["right_arrow_shift"],
             linestyles="dashed"
-            )
+        )
         plt.annotate(
             '',
             xy=(
-                x_of_sec_min_etot+values["right_arrow_shift"],\
-                0-values["elongate"]
-                ),
+                x_of_sec_min_etot + values["right_arrow_shift"],\
+                0 - values["elongate"]
+            ),
             xytext=(
-                x_of_sec_min_etot+values["right_arrow_shift"],\
-                E_rel_fit+values["elongate"]
-                ),
+                x_of_sec_min_etot + values["right_arrow_shift"],\
+                E_rel_fit + values["elongate"]
+            ),
             arrowprops=dict(arrowstyle="<|-|>", color = "k")
-            )
+        )
         plt.text(
-            x_of_min_etot-values["E_zpl_shift"],
+            x_of_min_etot - values["E_zpl_shift"],
             E_zpl_fit/2.0, "\u0394E"
-            )
+        )
         plt.text(
-            x_of_sec_min_etot+values["E_rel_shift"],
+            x_of_sec_min_etot + values["E_rel_shift"],
             E_rel_fit/2.0, "\u0394E$_{rel}$"
-            )
+        )
 
     if "labels" in kwargs:
         labels = kwargs.get("labels")
         plt.text(
-            labels["label1"]["x"], labels["label1"]["y"],
+            labels["label1"]["x"],
+            labels["label1"]["y"],
             labels["label1"]["name"]
-            )
+        )
         plt.text(
-            labels["label2"]["x"], labels["label2"]["y"],
+            labels["label2"]["x"],
+            labels["label2"]["y"],
             labels["label2"]["name"]
-            )
+        )
 
     plt.plot(x, y_1, linewidth=2, color="tab:blue")
     plt.plot(x, y_2, linewidth=2, color="tab:red")
 
     for i in range(npoints):
         plt.plot(
-            dQ_1[i], etot_1[i]-min_etot, marker="o", markersize=6,
+            dQ_1[i], etot_1[i] - min_etot, marker="o", markersize=6,
             markerfacecolor="w", color="tab:blue"
-            )
+        )
         plt.plot(
-            dQ_2[i], etot_2[i]-min_etot, marker="o", markersize=6,
+            dQ_2[i], etot_2[i] - min_etot, marker="o", markersize=6,
             markerfacecolor="w", color="tab:red"
-            )
+        )
 
     E_abs_fit = float(format(max_etot_fit - min_etot_fit, ".5f"))
     E_em_fit = float(format(sec_min_etot_fit - sec_max_etot_fit, ".5f"))
@@ -611,8 +611,8 @@ def plot_config_coord_diag(etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, **kwargs):
 
     y_diff = min(np.abs(np.array(y_2)-np.array(y_1)))
     for i in range(len(x)):
-        if np.abs(y_2[i] - y_1[i]) == y_diff:
-            E_barrier = float(format(y_2[i] - min(y_2), ".6f"))
+        if np.abs(y_2[i]-y_1[i]) == y_diff:
+            E_barrier = float(format(y_2[i]-min(y_2), ".6f"))
     # estimated transition rate through energy barrier
     rate_eff = np.power(10.0,12) * np.exp(-E_barrier*ev2J/(kB*T_room))
     time_eff = 1.0/rate_eff
@@ -626,7 +626,7 @@ def plot_config_coord_diag(etot_1, etot_2, dQ_1, dQ_2, xlim, ylim, **kwargs):
 def view_3d(
     atomic_pos, atomic_mass, transparent_background=True, 
     grid_off=True, axis_grid_off=False, **kwargs
-    ):
+):
     fig = plt.figure(
         num=None, figsize=(8, 6), dpi=200, facecolor='w', edgecolor='w'
     )
@@ -634,7 +634,7 @@ def view_3d(
     ax.scatter(
         atomic_pos[:, 0], atomic_pos[:, 1], atomic_pos[:, 2], 
         zdir="z", s=np.exp(4*atomic_mass/np.amax(atomic_mass)), 
-        c=cm.viridis(1-(atomic_mass/np.amax(atomic_mass))**6)
+        c=cm.viridis(1 - (atomic_mass/np.amax(atomic_mass))**6)
     )
     surf = ax.plot_trisurf(
         atomic_pos[:, 0], atomic_pos[:, 1], atomic_pos[:, 2], 
@@ -653,9 +653,9 @@ def view_3d(
     min_z = np.amin(atomic_pos[:, 2])
     max_range = np.amax([max_x-min_x, max_y-min_y, max_z-min_z])/ 2.0
     
-    ax.set_xlim3d(mean_x - max_range, mean_x + max_range)
-    ax.set_ylim3d(mean_y - max_range, mean_y + max_range)
-    ax.set_zlim3d(mean_z - max_range, mean_z + max_range)
+    ax.set_xlim3d(mean_x-max_range, mean_x+max_range)
+    ax.set_ylim3d(mean_y-max_range, mean_y+max_range)
+    ax.set_zlim3d(mean_z-max_range, mean_z+max_range)
 
     
     print("Other optional inputs:")
