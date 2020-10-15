@@ -117,7 +117,7 @@ class qe_out(object):
                 qe_output = open(os.path.join(path, sys.argv[1]), "r")
                 is_qe_output = True
         if not is_qe_output:
-            raise IOError("Fail to open {}".format("QE output file"))
+            raise IOError("Fail to open QE output file")
             
 
         self.lines = qe_output.readlines()
@@ -198,7 +198,7 @@ class qe_out(object):
             print("Number of atoms: {}".format(str(self.nat)))
             print("Number of atomic types: {}".format(str(self.ntyp)))
             print(
-                "Number of K points in irreducible Brilloin zone: {}"
+                "Number of k points in irreducible Brilloin zone: {}"
                 .format(str(self.nk))
             )
             print("Number of bands: {}".format(str(self.nbnd)))
@@ -531,16 +531,16 @@ class qe_out(object):
         
         if self.show_details:
             print(
-                "CBM = {} eV is at No.{} k-point: {}"
+                "CBM = {} eV is at No.{} k point: {}"
                 .format(cbm, index_k_cbm+1, k_cbm)
             )
             print(
-                "VBM = {} eV is at No.{} k-point: {}"
+                "VBM = {} eV is at No.{} k point: {}"
                 .format(vbm, index_k_vbm+1, k_vbm)
             )
             print("The indirect bandgap = {} eV".format(self.indirect_gap))
             print(
-                "The smallest direct bandgap = {} eV at k-point: {}".format(
+                "The smallest direct bandgap = {} eV at k point: {}".format(
                     np.min(self.direct_gap), 
                     kpts[
                         np.where(self.direct_gap == np.min(self.direct_gap))[0]
