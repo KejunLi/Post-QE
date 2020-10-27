@@ -62,8 +62,7 @@ def best_vals_of_gaussian(x, y):
     # fitting part
     init_vals = [0.5, 0.5]
     best_vals, covar = curve_fit(gaussian, x, y, p0=init_vals)
-    sys.stdout.write("\rbest_vals: {}\n".format(best_vals))
-    sys.stdout.flush()
+    print("\rbest_vals: {}\n".format(best_vals))
     return(best_vals)
 
 
@@ -79,8 +78,31 @@ def best_vals_of_exponential(x, y):
     looking for the best values of exponential fitting parameters
     """
     # fitting part
-    init_vals = [10, -0.1, -250]
+    init_vals = [10, -0.1, min(y)]
     best_vals, covar = curve_fit(exponential, x, y, p0=init_vals)
-    sys.stdout.write("\rbest_vals: {}\n".format(best_vals))
-    sys.stdout.flush()
+    print("\rbest_vals: {}\n".format(best_vals))
+    return(best_vals)
+
+
+def murnaghan_equ(V, E0, K0, Kp, V0):
+    """
+    ++----------------------------------------------------------------------
+    +   V: volume
+    +   E0: equilibrium total energy
+    +   K0: bulk modulus at P=0 (equilibrium)
+    +   Kp: bulk modulus pressure derivative, Kp_T = (\partial K/ \partial P)_T
+        if Kp_T changes little with pressure, Kp_T = Kp is a constant
+    +   V0: equilibrium volume
+    ++----------------------------------------------------------------------
+    """
+    E = E0 + K0*V0 * (1/Kp * (Kp-1) * (V/V0)**(1-Kp) + 1/Kp*V/V0 - 1 / (Kp-1))
+    return(E)
+    
+def best_vals_of_murnaghan_equ(V, etot):
+    init_vals = [min(etot), 0.5, 2, min(V)]
+    best_vals, covar = curve_fit(murnaghan_equ, V, etot, p0=init_vals)
+    print(
+        "\rbest_vals: E0 = {}\n K0 = {}\n Kp = {}\n V0 = {}\n"
+        .format(best_vals[0], best_vals[1], best_vals[2], best_vals[3])
+    )
     return(best_vals)
