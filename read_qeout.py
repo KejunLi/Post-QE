@@ -224,11 +224,8 @@ class qe_out(object):
         
         # call all the dynamic methods
         self.read_etot()
-        self.read_eigenenergies()
-        self.read_bandgap()
-        self.read_charge()
-        self.read_magnet()
-        self.read_forces()
+        #self.read_eigenenergies()
+        #self.read_bandgap()
         self.read_atomic_pos()
         self.read_miscellus()
 
@@ -627,26 +624,49 @@ class qe_out(object):
         self.ap_cart_coord = np.zeros((self.nat, 3))
         self.atomic_mass = np.zeros(self.nat)
         is_geometry_optimized = False
+        is_cryst_coord = True
 
         for i, line in enumerate(self.lines):
             if "Crystallographic axes" in line:
                 for j in range(self.nat):
                     self.atomsfull[j] = self.lines[i+3+j].strip().split()[1]
                     # substitute any digit in self.atomsfull with nothing
-                    self.atoms[j] = re.sub(r"D+", "", self.atomsfull[j])
+                    self.atoms[j] = re.sub(r"[^a-zA-Z]", "", self.atomsfull[j])
                     self.atomic_pos[j] = self.lines[i+3+j].strip().split()[6:9]
             if "End of BFGS Geometry Optimization" in line:
                 is_geometry_optimized = True
-                for j in range(self.nat):
-                    self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
-                    # substitute any digit in self.atomsfull with nothing
-                    self.atoms[j] = re.sub(r"[^a-zA-Z]", "", self.atomsfull[j])
-                    self.atomic_pos[j] = self.lines[i+6+j].strip().split()[1:4]
+                if "crystal" in self.lines[i+5]:
+                    for j in range(self.nat):
+                        self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
+                        # substitute any digit in self.atomsfull with nothing
+                        self.atoms[j] = re.sub(r"D+", "", self.atomsfull[j])
+                        self.atomic_pos[j] = (
+                            self.lines[i+6+j].strip().split()[1:4]
+                        )
+                    # The following converts the fractional crystal coordinates
+                    # to cartesian coordinates in angstrom
+                    self.ap_cart_coord = np.matmul(
+                        self.atomic_pos, self.cryst_axes
+                    )
+                elif "angstrom" in self.lines[i+5]:
+                    for j in range(self.nat):
+                        self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
+                        # substitute any digit in self.atomsfull with nothing
+                        self.atoms[j] = re.sub(r"D+", "", self.atomsfull[j])
+                        self.ap_cart_coord[j] = (
+                            self.lines[i+6+j].strip().split()[1:4]
+                        )
+                    # The following converts the cartesian coordinates in 
+                    # angstrom to fractional crystal coordinates
+                    inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+                    self.atomic_pos = np.matmul(
+                        self.ap_cart_coord, inv_cryst_axes
+                    )
+
         if not is_geometry_optimized:
             print("This is a single-point calculation (scf or nscf).")
-        # The following converts the fractional crystal coordinates to
-        # cartesian coordinates in angstrom
-        self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
+        
+        
         for i in range(self.nat):
             self.atomic_mass[i] = self.atomic_species[self.atoms[i]]
     
