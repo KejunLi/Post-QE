@@ -75,10 +75,10 @@ class qe_in(object):
             # and assume that a shows up before c
             for i, line in enumerate(self.lines):
                 if "celldm(1)" in line:
-                    celldm1 = float(re.findall(r"[+-]?\d+\.\d*", line)[1])
+                    celldm1 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
                     a = celldm1 * Bohr2Ang
                 elif "celldm(3)" in line:
-                    celldm3 = float(re.findall(r"[+-]?\d+\.\d*", line)[1])
+                    celldm3 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
                     c = a * celldm3
                 elif (
                     re.match("a", line.strip()) and 
@@ -111,15 +111,27 @@ class qe_in(object):
         self.atoms = np.zeros(self.nat, dtype="U4")
         self.atomic_pos = np.zeros((self.nat, 3))
         self.ap_cart_coord = np.zeros((self.nat, 3))
+        is_cryst_coord = True
         
         for i, line in enumerate(self.lines):
-            if "ATOMIC_POSITIONS" in line:
+            if "ATOMIC_POSITIONS" in line and "crystal" in line:
                 for j in range(self.nat):
                     self.atoms[j] = self.lines[i+1+j].strip().split()[0]
                     self.atomic_pos[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+1+j]
                     )
-        self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
+            elif "ATOMIC_POSITIONS" in line and "angstrom" in line:
+                is_cryst_coord = False
+                for j in range(self.nat):
+                    self.atoms[j] = self.lines[i+1+j].strip().split()[0]
+                    self.ap_cart_coord[j, :] = re.findall(
+                        r"[+-]?\d+\.\d*", self.lines[i+1+j]
+                    )
+        if is_cryst_coord:
+            self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
+        else:
+            inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+            self.atomic_pos = np.matmul(self.ap_cart_coord, inv_cryst_axes)
 
         atp = atoms_properties()
         self.atomic_mass = np.zeros(self.nat)
