@@ -81,13 +81,13 @@ class qe_in(object):
                     celldm3 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
                     c = a * celldm3
                 elif (
-                    re.match("a", line.strip()) and 
-                    not re.search(r"[b-zB-Z]", line.strip())
+                    re.match("a", line.strip()) 
+                    and not re.search(r"[b-zB-Z]", line.strip())
                 ):
                     a = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
                 elif (
-                    re.match("c", line.strip()) and 
-                    not re.search(r"[a-bA-Bd-zD-Z]", line.strip())
+                    re.match("c", line.strip()) 
+                    and not re.search(r"[a-bA-Bd-zD-Z]", line.strip())
                 ):
                     c = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
 
