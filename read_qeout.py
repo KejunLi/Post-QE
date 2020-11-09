@@ -126,6 +126,7 @@ class qe_out(object):
         self.dn_ne = 0
         self.soc = False
         self.scf_cycle = 0
+        self.exx_scf_cycle = 0
         Bohr2Ang = spc.physical_constants["Bohr radius"][0]/1e-10
 
         for i, line in enumerate(self.lines):
@@ -148,7 +149,7 @@ class qe_out(object):
             elif "mixing beta" in line:
                 self.mixing_beta = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
             elif "Exchange-correlation" in line:
-                self.xc_functional = line.strip().split()[2]
+                self.xc_functional = re.search(r"PBE0|PBE|HSE", line).group(0)
             elif "EXX-fraction" in line:
                 self.exx_fraction = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
             elif "spin-orbit" in line:
@@ -189,6 +190,8 @@ class qe_out(object):
                 self.spinpol = True
             elif "End of self-consistent calculation" in line:
                 self.scf_cycle += 1
+            elif "EXX self-consistency reached" in line:
+                self.exx_scf_cycle += 1
 
 
         self.show_details = show_details
@@ -206,6 +209,7 @@ class qe_out(object):
                 "Kinetic-energy cutoff (ecutwfc): {} Ry"
                 .format(str(self.ecutwfc))
             )
+            print("Exchange-correlation: {}".format(self.xc_functional))
             print("Spin polarization: {}".format(self.spinpol))
             print("Spin-orbit coupling: {}".format(self.soc))
 
@@ -240,22 +244,33 @@ class qe_out(object):
         """
         Ry2eV = spc.physical_constants["Hartree energy in eV"][0]/2
         etot_count = 0
-        self.etot = np.zeros(self.scf_cycle)
+        exx_etot_count = 0
+        self.etot = np.zeros(self.scf_cycle) # total energy without exx
+        self.exx_etot = np.zeros(self.exx_scf_cycle) # total energy with exx
         self.final_energy = 0
         for line in self.lines:
-            if "!" in line:
+            if "!    total energy" in line:
                 # \d +  # the integral part
                 # \.    # the decimal point
                 # \d *  # some fractional digits
-                self.etot[etot_count] = \
+                self.etot[etot_count] = (
                     float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Ry2eV
+                )
                 etot_count += 1
+            elif "!!   total energy" in line:
+                self.exx_etot[exx_etot_count] = (
+                    float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Ry2eV
+                )
+                exx_etot_count += 1
             elif "Final" in line:
                 final_energy = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
                 self.final_energy = final_energy * Ry2eV
                 break
-        if self.final_energy == 0 and len(self.etot) != 0:
-            self.final_energy = self.etot[-1]
+        if self.final_energy == 0:
+            if self.xc_functional == "PBE":
+                self.final_energy = self.etot[-1]
+            else:
+                self.final_energy = self.exx_etot[-1]
         if self.show_details:
             print("Final energy = {} eV".format(self.final_energy))
 
@@ -399,7 +414,7 @@ class qe_out(object):
             ) # the first half for spin up, the second for spin down
             
             assert self.nbnd > self.up_ne and self.nbnd > self.dn_ne, \
-                "No empty band ゴ~ゴ~ゴ~ゴ~\n"
+                "Empty band wanted\n"
             
             # evaluate the direct and indirect band gaps
             self.direct_gap_up = self.eigenE_up[:, int(self.up_ne)] - \
@@ -479,7 +494,7 @@ class qe_out(object):
             self.direct_gap = np.zeros(self.nk)
             kpts = self.kpts_cryst_coord
             if not self.soc:
-                assert self.nbnd > self.ne/2, "No empty band ゴ~ゴ~ゴ~ゴ~\n"
+                assert self.nbnd > self.ne/2, "Empty band wanted\n"
 
                 for i in range(self.nk):
                     self.direct_gap[i] = (
@@ -500,7 +515,7 @@ class qe_out(object):
                     self.eigenE[:, int(self.ne/2-1)] == vbm
                 )[0][0]
             else:
-                assert self.nbnd > self.ne, "No empty band ゴ~ゴ~ゴ~ゴ~\n"
+                assert self.nbnd > self.ne, "Empty band wanted\n"
 
                 for i in range(self.nk):
                     self.direct_gap[i] = (
@@ -624,7 +639,6 @@ class qe_out(object):
         self.ap_cart_coord = np.zeros((self.nat, 3))
         self.atomic_mass = np.zeros(self.nat)
         is_geometry_optimized = False
-        is_cryst_coord = True
 
         for i, line in enumerate(self.lines):
             if "Crystallographic axes" in line:
@@ -635,7 +649,7 @@ class qe_out(object):
                     self.atomic_pos[j] = self.lines[i+3+j].strip().split()[6:9]
             if "End of BFGS Geometry Optimization" in line:
                 is_geometry_optimized = True
-                if "crystal" in self.lines[i+5]:
+                if "crystal" in self.lines[i+5]: # crystal fractional coordinate
                     for j in range(self.nat):
                         self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
                         # substitute any digit in self.atomsfull with nothing
@@ -648,7 +662,7 @@ class qe_out(object):
                     self.ap_cart_coord = np.matmul(
                         self.atomic_pos, self.cryst_axes
                     )
-                elif "angstrom" in self.lines[i+5]:
+                elif "angstrom" in self.lines[i+5]: # cartisian coordinate
                     for j in range(self.nat):
                         self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
                         # substitute any digit in self.atomsfull with nothing
