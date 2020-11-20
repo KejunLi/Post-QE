@@ -729,6 +729,8 @@ def read_vac(dir_f=".avg.out"):
     ++--------------------------------------------------------------------------
     +   Read electrostatic potential file avg.out
     +   electrostatic potential data start from line 23 and stop at line -10
+    +
+    +   return(z, vac)
     +   z: positions in z of cell (angstrom)
     +   vac: vacuum electrostatic potential (eV)
     ++--------------------------------------------------------------------------
