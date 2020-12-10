@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from plot_tools import cfe, var_color
 from constants import Ry2eV, Ha2eV
-plt.style.use("/home/likejun/work/github/styles/wamum")
+plt.style.use("/home/fagulong/work/github/styles/wamum")
 
 
 ### 6x6 CB wufeng, kpoints 2x2, JDTFx, ONCV, truncation, spinz

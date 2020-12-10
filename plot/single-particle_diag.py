@@ -4,19 +4,19 @@ import numpy as np
 import scipy.constants as spc
 import os
 import sys
-sys.path.insert(0, "/home/likejun/work/github/qe_post_processing")
-sys.path.insert(0, "/home/likejun/work/github/yambo_post_processing")
+sys.path.insert(0, "/home/fagulong/work/github/qe_post_processing")
+sys.path.insert(0, "/home/fagulong/work/github/yambo_post_processing")
 from plot_tools import plot_sg_diag
 import read_qeout
 
 
-plt.style.use("/home/likejun/work/github/styles/sg-diag")
+plt.style.use("/home/fagulong/work/github/styles/sg-diag")
 
 Ry2eV = spc.physical_constants["Hartree energy in eV"][0]/2
 
 #TiBN
 vac = 0.180697681 * Ry2eV # electrostatic potential in vacuum region
-directory = "/home/likejun/work/tibn/nk331/re_tibn_oncv_c1/6x6/nonradiative/relax-gs"
+directory = "/home/fagulong/work/tibn/nk331/re_tibn_oncv_c1/6x6/nonradiative/relax-gs"
 dir_f = os.path.join(directory, "relax.out")
 qe = read_qe.qe_out(dir_f)
 qe.read_eigenenergies()
@@ -33,7 +33,7 @@ label = "PBE"
 pbe = [levels_up, e_spinu, occ_spinu, levels_dn, e_spind, occ_spind, vac, vbm_pbe, cbm_pbe, ylim, label]
 
 vac = 0.180878284 * Ry2eV
-directory = "/home/likejun/work/tibn/nk331/tibn_oncv_c1/6x6/nonradiative/pbe0_exx0.41_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
+directory = "/home/fagulong/work/tibn/nk331/tibn_oncv_c1/6x6/nonradiative/pbe0_exx0.41_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
 dir_f = os.path.join(directory, "scf.out")
 qe = read_qe.qe_out(dir_f)
 qe.read_eigenenergies()
@@ -50,7 +50,7 @@ label = "PBE0($\mathrm{\u03b1}$)"
 pbe0 = [levels_up, e_spinu, occ_spinu, levels_dn, e_spind, occ_spind, vac, vbm_pbe0, cbm_pbe0, ylim, label]
 
 vac = 0.180878284 * Ry2eV
-directory = "/home/likejun/work/tibn/nk331/tibn_oncv_c1/6x6/nonradiative/pbe0_exx0.41_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
+directory = "/home/fagulong/work/tibn/nk331/tibn_oncv_c1/6x6/nonradiative/pbe0_exx0.41_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
 dir_f = os.path.join(directory, "scf.out")
 qe = read_qe.qe_out(dir_f, show_details=True)
 qe.read_eigenenergies()
@@ -74,7 +74,7 @@ gwpbe0 = [levels_up, e_spinu, occ_spinu, levels_dn, e_spind, occ_spind, vac, vbm
 
 # # MoBN
 # vac = 0.180697681 * Ry2eV # electrostatic potential in vacuum region
-# directory = "/home/likejun/work/mobn/mobn_oncv_c1/6x6/nonradiative/relax-gs"
+# directory = "/home/fagulong/work/mobn/mobn_oncv_c1/6x6/nonradiative/relax-gs"
 # dir_f = os.path.join(directory, "relax.out")
 # qe = read_qe.qe_out(dir_f)
 # qe.read_eigenenergies()
@@ -91,7 +91,7 @@ gwpbe0 = [levels_up, e_spinu, occ_spinu, levels_dn, e_spind, occ_spind, vac, vbm
 # pbe = [levels_up, e_spinu, occ_spinu, levels_dn, e_spind, occ_spind, vac, vbm_pbe, cbm_pbe, ylim, label]
 
 # vac = 0.180878284 * Ry2eV
-# directory = "/home/likejun/work/mobn/mobn_oncv_c1/6x6/nonradiative/pbe0_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
+# directory = "/home/fagulong/work/mobn/mobn_oncv_c1/6x6/nonradiative/pbe0_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
 # dir_f = os.path.join(directory, "scf.out")
 # qe = read_qe.qe_out(dir_f)
 # qe.read_eigenenergies()
@@ -108,7 +108,7 @@ gwpbe0 = [levels_up, e_spinu, occ_spinu, levels_dn, e_spind, occ_spind, vac, vbm
 # pbe0 = [levels_up, e_spinu, occ_spinu, levels_dn, e_spind, occ_spind, vac, vbm_pbe0, cbm_pbe0, ylim, label]
 
 # vac = 0.180878284 * Ry2eV
-# directory = "/home/likejun/work/mobn/mobn_oncv_c1/6x6/nonradiative/pbe0_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
+# directory = "/home/fagulong/work/mobn/mobn_oncv_c1/6x6/nonradiative/pbe0_gwbse_nk221_nbnd1000_qe6.1_yambo4.4"
 # dir_f = os.path.join(directory, "scf.out")
 # qe = read_qe.qe_out(dir_f)
 # qe.read_eigenenergies()

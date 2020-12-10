@@ -17,10 +17,10 @@ def write_crystaxes_pos(cryst_axes, atoms, atomic_pos):
     atoms_atomic_pos = np.column_stack((atoms, atomic_pos))
 
     output_file = open(
-        "/home/likejun/work/write_files/convert_cart_to_cryst/cnv.txt", "w"
+        "/home/fagulong/work/write_files/convert_cart_to_cryst/cnv.txt", "w"
     )
     output_file = open(
-        "/home/likejun/work/write_files/convert_cart_to_cryst/cnv.txt", "a"
+        "/home/fagulong/work/write_files/convert_cart_to_cryst/cnv.txt", "a"
     )
     output_file.write("convert cart_coord to cryst_coord\n")
     output_file.write("CELL_PARAMETERS angstrom\n")

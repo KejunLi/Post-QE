@@ -306,8 +306,12 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
         ax.set_xlim([0, 1])
         ax.set_ylim([ylim_bot, ylim_top])
         plt.xticks(coord_labels, list(np.array(args[:])[:, 10]))
+        # plt.subplots_adjust(
+        #     left=0.08, bottom=0.08, right=0.98, top=0.98,
+        #     wspace=None, hspace=None
+        # )
         plt.subplots_adjust(
-            left=0.08, bottom=0.08, right=0.98, top=0.98,
+            left=0.12, bottom=0.08, right=0.98, top=0.98,
             wspace=None, hspace=None
         )
     if mode == 2:
@@ -316,11 +320,11 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
             for j, yval in enumerate(arg[1]):
                 x = [0.1, 0.45]
                 y = [yval-arg[6], yval-arg[6]]
-                ax[i].plot(x, y, color='black')
+                ax.plot(x, y, color='black')
                 # show levels' number, occupations and eigenvalues
                 if show_values:
                     if arg[2][j] == 1:  # occupied spin up states
-                        ax[i].text(
+                        ax.text(
                             0.1,
                             yval-arg[6],    # referenced to vacuum
                             str(arg[0][j]) + "\u2b06|"
@@ -332,7 +336,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                             verticalalignment='center'
                         )
                     else:   # unoccupied spin up states
-                        ax[i].text(
+                        ax.text(
                             0.1,
                             yval-arg[6],
                             str(arg[0][j]) + "\u21e7|"
@@ -346,7 +350,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                 # not show levels' number, occupations and eigenvalues
                 else:
                     if arg[2][j] == 1:  # occupied spin down states
-                        ax[i].text(
+                        ax.text(
                             0.25 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u2b06",
@@ -356,7 +360,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                             verticalalignment='center'
                         )
                     else:   # unoccupied spin down states
-                        ax[i].text(
+                        ax.text(
                             0.25 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u21e7",
@@ -368,11 +372,11 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
             for j, yval in enumerate(arg[4]):   # spin down
                 x = [0.55, 0.9]
                 y = [yval-arg[6], yval-arg[6]]
-                ax[i].plot(x, y, color='black')
+                ax.plot(x, y, color='black')
                 # show levels' number, occupations and eigenvalues
                 if show_values:
                     if arg[5][j] == 1:  # occupied spin down states
-                        ax[i].text(
+                        ax.text(
                             0.9,
                             yval-arg[6],    # referenced to vacuum
                             str(arg[3][j]) + "\u2b07|"
@@ -384,7 +388,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                             verticalalignment='center'
                         )
                     else:   # unoccupied spin down states
-                        ax[i].text(
+                        ax.text(
                             0.9,
                             yval-arg[6],    # referenced to vacuum
                             str(arg[3][j]) + "\u21e9|"
@@ -398,7 +402,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                 # not show levels' number, occupations and eigenvalues
                 else:
                     if arg[5][j] == 1:  # occupied spin down states
-                        ax[i].text(
+                        ax.text(
                             0.7 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u2b07",
@@ -407,7 +411,7 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                             verticalalignment='center'
                         )
                     else:
-                        ax[i].text(
+                        ax.text(
                             0.7 + j%2 * 0.05,
                             yval-arg[6],    # referenced to vacuum
                             "\u21e9",
@@ -416,25 +420,25 @@ def plot_sg_diag(*args, mode=1, show_values=True, **kwargs):
                             horizontalalignment='center', 
                             verticalalignment='center'
                         )
-            ax[i].set_xlim([0, 1])
-            ax[i].set_ylim(arg[9])
-            ax[i].fill_between(
+            ax.set_xlim([0, 1])
+            ax.set_ylim(arg[9])
+            ax.fill_between(
                 np.array([0, 1]),  # x range to fill
                 [arg[8], arg[8]],               # lower limit of y; cbm
                 [np.amax(arg[9]), np.amax(arg[9])],      # upper limit of y
                 facecolor="tab:red",             # The fill color
                 alpha=0.32,                      # Transparency of the fill
             )
-            ax[i].fill_between(
+            ax.fill_between(
                 np.array([0, 1]),  # x range to fill
                 [np.amin(arg[9]), np.amin(arg[9])],    # lower limit of y
                 [arg[7], arg[7]],               # upper limit of y; vbm
                 facecolor="tab:blue",               # The fill color
                 alpha=0.32                      # Transparency of the fill
             )
-            ax[i].xaxis.set_major_locator(plt.NullLocator())
-            ax[0].set_ylabel("E (eV)")
-            ax[i].set_title(arg[10])
+            ax.xaxis.set_major_locator(plt.NullLocator())
+            ax.set_ylabel("E (eV)")
+            ax.set_title(arg[10])
             
             plt.subplots_adjust(
                 left=0.08, bottom=0.02, right=0.98, top=0.9,
@@ -636,10 +640,10 @@ def view_3d(
         zdir="z", s=np.exp(4*atomic_mass/np.amax(atomic_mass)), 
         c=cm.viridis(1 - (atomic_mass/np.amax(atomic_mass))**6)
     )
-    surf = ax.plot_trisurf(
-        atomic_pos[:, 0], atomic_pos[:, 1], atomic_pos[:, 2], 
-        linewidth=0.2, antialiased=True, cmap=cm.viridis, alpha=0.0001
-    )
+    # surf = ax.plot_trisurf(
+    #     atomic_pos[:, 0], atomic_pos[:, 1], atomic_pos[:, 2], 
+    #     linewidth=0.2, antialiased=True, cmap=cm.viridis, alpha=0.0001
+    # )
     
     # Fix aspect ratio
     mean_x = np.mean(atomic_pos[:, 0])
@@ -706,7 +710,7 @@ def view_3d(
     # about view directions and axes labels
     if "view_direction" in kwargs:
         if kwargs.get("view_direction") == "front":
-            ax.view_init(azim=-90, elev=0)
+            ax.view_init(azim=90, elev=0)
             ax.w_yaxis.line.set_lw(0.)
             ax.set_yticks([])
             if "xlabel" in kwargs:
@@ -724,7 +728,7 @@ def view_3d(
             else:
                 print("zlabel = ?")
         elif kwargs.get("view_direction") == "top":
-            ax.view_init(azim=-90, elev=90)
+            ax.view_init(azim=90, elev=90)
             ax.w_zaxis.line.set_lw(0.)
             ax.set_zticks([])
             if "xlabel" in kwargs:
@@ -742,7 +746,7 @@ def view_3d(
             else:
                 print("ylabel = ?")
         else:
-            ax.view_init(azim=-180, elev=0)
+            ax.view_init(azim=0, elev=0)
             ax.w_xaxis.line.set_lw(0.)
             ax.set_xticks([])
             if "ylabel" in kwargs:
@@ -785,13 +789,189 @@ def view_3d(
 
 
     # colorbar
-    if "plot_corlorbar" in kwargs:
-        if kwargs.get("plot_corlorbar"):
-            if "colorbar_edges" in kwargs:
-                fig.colorbar(surf, boundaries=kwargs.get("colorbar_edges"))
+    # if "plot_corlorbar" in kwargs:
+    #     if kwargs.get("plot_corlorbar"):
+    #         if "colorbar_edges" in kwargs:
+    #             fig.colorbar(surf, boundaries=kwargs.get("colorbar_edges"))
+    #         else:
+    #             print("colorbar_edges = np.linspace(min, max)")
+    #             fig.colorbar(surf)
+    # else:
+    #     print("plot_corlorbar = True")
+
+
+def plot_dq_3d(
+    atomic_pos, dq ,atomic_mass, transparent_background=True, 
+    grid_off=True, axis_grid_off=False, **kwargs
+):
+    fig = plt.figure(
+        num=None, figsize=(8, 6), dpi=200, facecolor='w', edgecolor='w'
+    )
+    ax = fig.add_subplot(1, 1, 1, projection="3d")
+    ax.scatter(
+        atomic_pos[:, 0], atomic_pos[:, 1], dq, 
+        zdir="z", s=np.exp(4*atomic_mass/np.amax(atomic_mass)), 
+        c=cm.viridis(1 - (atomic_mass/np.amax(atomic_mass))**6)
+    )
+    surf = ax.plot_trisurf(
+        atomic_pos[:, 0], atomic_pos[:, 1], dq, 
+        linewidth=0.2, antialiased=True, cmap=cm.viridis, alpha=0.48
+    )
+    
+    # Fix aspect ratio
+    mean_x = np.mean(atomic_pos[:, 0])
+    mean_y = np.mean(atomic_pos[:, 1])
+    mean_z = np.mean(dq)
+    max_x = np.amax(atomic_pos[:, 0])
+    min_x = np.amin(atomic_pos[:, 0])
+    max_y = np.amax(atomic_pos[:, 1]) 
+    min_y = np.amin(atomic_pos[:, 1])
+    max_z = np.amax(dq)
+    min_z = np.amin(dq)
+    max_range = np.amax([max_x-min_x, max_y-min_y, max_z-min_z])/ 2.0
+    
+    ax.set_xlim3d(mean_x-max_range, mean_x+max_range)
+    ax.set_ylim3d(mean_y-max_range, mean_y+max_range)
+    ax.set_zlim3d(0, 0.3)
+    
+    print("Other optional inputs:")
+    if transparent_background == True:
+        # make the panes transparent (red, green, blue, and alpha (opacity))
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        print("transparent_background = False")
+    else:
+        print("transparent_background = True")
+    
+    if grid_off == True:
+        ax.grid(False)
+        print("grid_off = False")
+    else:
+        print("grid_off = True")
+
+    if axis_grid_off == True:
+        ax.set_axis_off()
+        print("axis_grid_off = False")
+    else:
+        print("axis_grid_off = True")
+
+    # below are kwargs
+    if "sphere" in kwargs:
+        phi = np.linspace(0, np.pi*2, 100)
+        theta = np.linspace(0, np.pi, 100)
+        stride = 2
+        (center, radius) = kwargs.get("sphere")
+        x = radius * np.outer(np.sin(theta), np.cos(phi)) + center[0]
+        y = radius * np.outer(np.sin(theta), np.sin(phi)) + center[1]
+        z = radius * np.outer(np.cos(theta), np.ones(np.size(phi))) + center[2]
+        ax.scatter(center[0], center[1], center[2])
+        ax.plot_surface(x, y, z, alpha=0.1, cstride=stride, rstride=stride)
+    else:
+        print("sphere = (defect_center, radius)")
+
+    # title
+    if "title" in kwargs:
+        if kwargs.get("title") == None:
+            print("title == None")
+        else:
+            ax.set_title("{}".format(kwargs.get("title")))
+    else:
+        print("title = ?")
+
+    # about view directions and axes labels
+    if "view_direction" in kwargs:
+        if kwargs.get("view_direction") == "front":
+            ax.view_init(azim=90, elev=0)
+            ax.w_yaxis.line.set_lw(0.)
+            ax.set_yticks([])
+            ax.set_xlabel("$\mathrm{x~(\AA)}$")
+            ax.set_zlabel("$\mathrm{dq~(amu^{1/2}\AA)}$")
+            if "xlabel" in kwargs:
+                if kwargs.get("xlabel") == None:
+                    print("xlabel == None")
+                else:
+                    ax.set_xlabel(kwargs.get("xlabel"))
             else:
-                print("colorbar_edges = np.linspace(min, max)")
-                fig.colorbar(surf)
+                print("xlabel = ?")
+            if "zlabel" in kwargs:
+                if kwargs.get("zlabel") == None:
+                    print("zlabel == None")
+                else:
+                    ax.set_zlabel(kwargs.get("zlabel"))
+            else:
+                print("zlabel = ?")
+        elif kwargs.get("view_direction") == "top":
+            ax.view_init(azim=90, elev=90)
+            ax.w_zaxis.line.set_lw(0.)
+            ax.set_zticks([])
+            ax.set_xlabel("$\mathrm{x~(\AA)}$")
+            ax.set_ylabel("$\mathrm{y~(\AA)}$")
+            if "xlabel" in kwargs:
+                if kwargs.get("xlabel") == None:
+                    print("xlabel == None")
+                else:
+                    ax.set_xlabel(kwargs.get("xlabel"))
+            else:
+                print("xlabel = ?")
+            if "ylabel" in kwargs:
+                if kwargs.get("ylabel") == None:
+                    print("ylabel == None")
+                else:
+                    ax.set_ylabel(kwargs.get("ylabel"))
+            else:
+                print("ylabel = ?")
+        else:
+            ax.view_init(azim=0, elev=0)
+            ax.w_xaxis.line.set_lw(0.)
+            ax.set_xticks([])
+            ax.set_ylabel("$\mathrm{y~(\AA)}$")
+            ax.set_zlabel("$\mathrm{dq~(amu^{1/2}\AA)}$")
+            if "ylabel" in kwargs:
+                if kwargs.get("ylabel") == None:
+                    print("ylabel == None")
+                else:
+                    ax.set_ylabel(kwargs.get("ylabel"))
+            else:
+                print("ylabel = ?")
+            if "zlabel" in kwargs:
+                if kwargs.get("zlabel") == None:
+                    print("zlabel == None")
+                else:
+                    ax.set_zlabel(kwargs.get("zlabel"))
+            else:
+                print("zlabel = ?")
+    else:
+        print("view_direction = 'top'")
+        if "xlabel" in kwargs:
+            if kwargs.get("xlabel") == None:
+                print("xlabel == None")
+            else:
+                ax.set_xlabel(kwargs.get("xlabel"))
+        else:
+            print("xlabel = ?")
+        if "ylabel" in kwargs:
+            if kwargs.get("ylabel") == None:
+                print("ylabel == None")
+            else:
+                ax.set_ylabel(kwargs.get("ylabel"))
+        else:
+            print("ylabel = ?")
+        if "zlabel" in kwargs:
+            if kwargs.get("zlabel") == None:
+                print("zlabel == None")
+            else:
+                ax.set_zlabel(kwargs.get("zlabel"))
+        else:
+            print("zlabel = ?")
+
+
+    # colorbar
+    if "plot_colorbar" in kwargs:
+        if kwargs.get("plot_colorbar"):
+            fig.colorbar(
+                surf, boundaries=np.linspace(0, max_z, 1000), 
+                fraction=2e-2, pad=0, format='%.2f'
+            )
     else:
         print("plot_corlorbar = True")
-

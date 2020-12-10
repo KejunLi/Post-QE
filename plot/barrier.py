@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import scipy.constants as spc
-sys.path.insert(0, "/home/likejun/work/github/qe_post_processing")
+sys.path.insert(0, "/home/fagulong/work/github/qe_post_processing")
 from read_qein import qe_in
 from read_qeout import qe_out
-plt.style.use("/home/likejun/work/github/styles/wamum")
+plt.style.use("/home/fagulong/work/github/styles/wamum")
 
 
-path = "/home/likejun/work/nbvn_vb/sg15_oncv/out-of-plane/barrier_nbvn_vb/6x6"
+path = "/home/fagulong/work/nbvn_vb/sg15_oncv/out-of-plane/barrier_nbvn_vb/6x6"
 state = "lin-gs"
 
 ratio = np.arange(0, 1.05, 0.05)

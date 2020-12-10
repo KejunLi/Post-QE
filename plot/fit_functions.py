@@ -13,6 +13,15 @@ def lin_fct(x, c0, c1):
     """
     y = c0*x + c1
     return(y)
+def best_vals_of_lin_fct(x, y):
+    """
+    looking for the best values of linear fitting parameters
+    """
+    # fitting part
+    init_vals = [0.5, np.amin(y)]
+    best_vals, covar = curve_fit(lin_fct, x, y, p0=init_vals)
+    print("\rbest_vals: {}\n".format(best_vals))
+    return(best_vals)
 
 
 def quadratic_fct(x, c0, c1, c2):
@@ -21,6 +30,15 @@ def quadratic_fct(x, c0, c1, c2):
     """
     y = c0*np.power(x,2) + c1*x + c2 # definition of function
     return(y)
+def best_vals_of_quadratic_fct(x, y):
+    """
+    looking for the best values of linear fitting parameters
+    """
+    # fitting part
+    init_vals = [0.5, 0.5, np.amin(y)]
+    best_vals, covar = curve_fit(quadratic_fct, x, y, p0=init_vals)
+    print("\rbest_vals: {}\n".format(best_vals))
+    return(best_vals)
 
 
 def cubic_fct(x, c0, c1, c2, c3):
@@ -29,6 +47,15 @@ def cubic_fct(x, c0, c1, c2, c3):
     """
     y = c0*np.power(x,3) + c1*np.power(x,2) + c2*x + c3 # definition of function
     return(y)
+def best_vals_of_cubic_fct(x, y):
+    """
+    looking for the best values of linear fitting parameters
+    """
+    # fitting part
+    init_vals = [-0.5, 0.465, 0.002, np.amin(y)]
+    best_vals, covar = curve_fit(cubic_fct, x, y, p0=init_vals)
+    print("\rbest_vals: {}\n".format(best_vals))
+    return(best_vals)
 
 
 def quadru_fct(x, c0, c1, c2, c3, c4):
@@ -37,6 +64,15 @@ def quadru_fct(x, c0, c1, c2, c3, c4):
     """
     y = c0*np.power(x,4) + c1*np.power(x,3) + c2*np.power(x,2) + c3*x + c4
     return(y)
+def best_vals_of_quadru_fct(x, y):
+    """
+    looking for the best values of linear fitting parameters
+    """
+    # fitting part
+    init_vals = [0.5, 0.5, 0.112, 0.005, np.amin(y)]
+    best_vals, covar = curve_fit(quadru_fct, x, y, p0=init_vals)
+    print("\rbest_vals: {}\n".format(best_vals))
+    return(best_vals)
 
 
 def penta_fct(x, c0, c1, c2, c3, c4, c5):
@@ -46,6 +82,15 @@ def penta_fct(x, c0, c1, c2, c3, c4, c5):
     y = c0*np.power(x,5) + c1*np.power(x,4) + c2*np.power(x,3) +\
          c3*np.power(x,2) + c4*x + c5
     return(y)
+def best_vals_of_penta_fct(x, y):
+    """
+    looking for the best values of linear fitting parameters
+    """
+    # fitting part
+    init_vals = [0.5, 0.5, 0.5, 0.5, np.amin(y)]
+    best_vals, covar = curve_fit(penta_fct, x, y, p0=init_vals)
+    print("\rbest_vals: {}\n".format(best_vals))
+    return(best_vals)
 
 
 def gaussian(x, sigma, mu):
