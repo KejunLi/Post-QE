@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 import scipy.constants as spc
-sys.path.insert(0, "/home/likejun/work/github/constants")
+sys.path.insert(0, "/home/fagulong/work/github/constants")
 from periodic_table import atoms_properties
 
 

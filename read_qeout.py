@@ -228,8 +228,8 @@ class qe_out(object):
         
         # call all the dynamic methods
         self.read_etot()
-        #self.read_eigenenergies()
-        #self.read_bandgap()
+        self.read_eigenenergies()
+        self.read_bandgap()
         self.read_atomic_pos()
         self.read_miscellus()
 
