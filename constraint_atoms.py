@@ -2,7 +2,7 @@
 import numpy as np
 import sys
 import os
-sys.path.insert(0, "/home/likejun/work/github/constants")
+sys.path.insert(0, "/home/fagulong/work/github/constants")
 from periodic_table import atoms_properties
 
 
@@ -10,6 +10,11 @@ class cstr_atoms(object):
     """
     ++--------------------------------------------------------------------------
     +   1. Constructor
+    +   Input:
+    +   atoms (atomic species) 
+    +   cryst_axes (crystal axes) 
+    +   atomic_pos (atomic positions)
+    +
     +   Attributes:
     +   self.atoms (atomic species associated with each atomic position)
     +   self.nat (number of atoms)
@@ -20,7 +25,8 @@ class cstr_atoms(object):
     +
     +   No return
     ++--------------------------------------------------------------------------
-    +   1. Method magic_cube(self)
+    +   2. Method magic_cube(self)
+    +   Input: none
     +   Attributes:
     +   self.cubes (a cube is an image of the supercell, containing atomic
     +   positions in cartesian coordinates)
@@ -28,7 +34,8 @@ class cstr_atoms(object):
     +
     +   return(all_ap_cart_coord, all_mass)
     ++--------------------------------------------------------------------------
-    +   2. Method multi_images(self, rep)
+    +   3. Method multi_images(self, mul)
+    +   Input: repetition times of the original supercell in each of x, y and z 
     +   Attributes:
     +   self.images_ap_cart_coord (atomic positions in cartesian coordinates of
     +   all periodic images)
@@ -36,13 +43,18 @@ class cstr_atoms(object):
     +
     +   No return
     ++--------------------------------------------------------------------------
-    +   3. Method sphere(self)
+    +   4. Method sphere(self, center=[0, 0, 0], radius=0)
+    +   Input:
+    +   center (defect center)
+    +   radius (radius of the spherical range within which atoms are not fixed)
+    +
     +   Attributes:
     +   self.isfree (boolean values, determine if atoms are free to move)
     +
     +   No return
     ++--------------------------------------------------------------------------
-    +   4. Method cstr_atoms(self)
+    +   5. Method cstr_atoms(self)
+    +   Input: none
     +   Attributes:
     +   self.if_pos (an array that whill be used to multiply with forces in a 
     +   Quantum Espresso relax calculation, if if_pos[i] == [0, 0, 0], the force
@@ -55,7 +67,7 @@ class cstr_atoms(object):
     +   No return
     ++--------------------------------------------------------------------------
     """
-    def __init__(self, atoms=None, cryst_axes=None, atomic_pos=None, zx=False):
+    def __init__(self, atoms=None, cryst_axes=None, atomic_pos=None):
         self.atoms = atoms
         self.cryst_axes = cryst_axes
         self.atomic_pos = atomic_pos
@@ -99,9 +111,10 @@ class cstr_atoms(object):
         +                         ...20)
         +           (200) (210) (220)
         +
-        +   the original supercell atomic positions are stuffed into cube (111)
-        +   the repeated supercells are translated [-1, 0, 1] number of the 
-        +   basis vectors along x, y and z axes
+        +   The original supercell atomic positions are placed in the center
+        +   cube (111).
+        +   The repeated supercells are translated [-1, 0, 1] number of the 
+        +   basis vectors along x, y and z axes.
         ++----------------------------------------------------------------------
         """
         # basis vectors of the Bravis lattice of the supercell
