@@ -231,7 +231,7 @@ class qe_out(object):
         self.read_eigenenergies()
         self.read_bandgap()
         self.read_atomic_pos()
-        self.read_miscellus()
+        #self.read_miscellus()
 
     def read_etot(self):
         """
