@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import scipy.constants as spc
 from read_qein import qe_in
 from read_qeout import qe_bands
-plt.style.use("/home/fagulong/work/github/styles/wamum")
+plt.style.use("/home/lkj/work/github/styles/wamum")
 
 
 def bands_kpath(path_input=None, path_output=None):
@@ -59,7 +59,7 @@ def bands_kpath(path_input=None, path_output=None):
 
 
 if __name__ == "__main__":
-    path = "/home/fagulong/work/c2cn/fix_atoms_5A/6x6/nonradiative/bands/job_bands"
+    path = "/home/lkj/work/c2cn/fix_atoms_5A/6x6/nonradiative/bands/job_bands"
     pathin = os.path.join(path, "nscf_for_bands.in")
     pathout = os.path.join(path, "nscf_for_bands.out")
     vac = 0.162307899*spc.physical_constants["Hartree energy in eV"][0]/2

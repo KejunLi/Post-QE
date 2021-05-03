@@ -2,7 +2,7 @@
 import numpy as np
 import sys
 import os
-sys.path.insert(0, "/home/fagulong/work/github/constants")
+sys.path.insert(0, "/home/lkj/work/github/constants")
 from periodic_table import atoms_properties
 
 
@@ -27,6 +27,7 @@ class cstr_atoms(object):
     ++--------------------------------------------------------------------------
     +   2. Method magic_cube(self)
     +   Input: none
+    +
     +   Attributes:
     +   self.cubes (a cube is an image of the supercell, containing atomic
     +   positions in cartesian coordinates)
@@ -36,6 +37,7 @@ class cstr_atoms(object):
     ++--------------------------------------------------------------------------
     +   3. Method multi_images(self, mul)
     +   Input: repetition times of the original supercell in each of x, y and z 
+    +
     +   Attributes:
     +   self.images_ap_cart_coord (atomic positions in cartesian coordinates of
     +   all periodic images)
@@ -55,6 +57,7 @@ class cstr_atoms(object):
     ++--------------------------------------------------------------------------
     +   5. Method cstr_atoms(self)
     +   Input: none
+    +
     +   Attributes:
     +   self.if_pos (an array that whill be used to multiply with forces in a 
     +   Quantum Espresso relax calculation, if if_pos[i] == [0, 0, 0], the force

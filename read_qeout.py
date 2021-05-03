@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import re
 import scipy.constants as spc
@@ -149,7 +148,7 @@ class qe_out(object):
             elif "mixing beta" in line:
                 self.mixing_beta = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
             elif "Exchange-correlation" in line:
-                self.xc_functional = re.search(r"PBE0|PBE|HSE", line).group(0)
+                self.xc_functional = re.search(r"PBE0|PBE|HSE|.", line).group(0)
             elif "EXX-fraction" in line:
                 self.exx_fraction = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
             elif "spin-orbit" in line:
@@ -267,10 +266,18 @@ class qe_out(object):
                 self.final_energy = final_energy * Ry2eV
                 break
         if self.final_energy == 0:
+            # if no final energy, use the most updated energy as final energy
             if self.xc_functional == "PBE":
                 self.final_energy = self.etot[-1]
-            else:
-                self.final_energy = self.exx_etot[-1]
+            else: # hybrid functionals or functionals with vdW_corr
+                try:
+                    # if hybrid calculation, and it can converge
+                    print("Hybrid calculation is not done")
+                    self.final_energy = self.exx_etot[-1]
+                except:
+                    # if not hybrid, or other functionals do not converge
+                    print("Calculation is not done or not converged")
+                    self.final_energy = self.etot[-1]
         if self.show_details:
             print("Final energy = {} eV".format(self.final_energy))
 
@@ -332,8 +339,8 @@ class qe_out(object):
                 num_scf -= 1
                 continue
             elif num_scf == 0 and "   k =" in line and k_counted < nk_spin:
-                #self.kpts[k_counted, :] = \
-                #np.array(re.findall(r"[+-]?\d+\.\d*", line)).astype(np.float)
+                # self.kpts[k_counted, :] = \
+                # np.array(re.findall(r"[+-]?\d+\.\d*", line)).astype(np.float)
                 temp_E = self.lines[i+2 : i+2+rows]
                 temp_occ = self.lines[i+4+rows : i+4+rows*2]
                 for j in range(rows):
@@ -586,7 +593,7 @@ class qe_out(object):
         +   This method reads the magnetic moment after convergence
         ++----------------------------------------------------------------------
         """
-        self.magn = np.zeros(self.nat)
+        self.magnet = np.zeros(self.nat)
         num_scf = self.scf_cycle
         for i, line in enumerate(self.lines):
             if "End of self-consistent calculation" in line and num_scf > 0:
@@ -594,7 +601,7 @@ class qe_out(object):
                 continue
             elif num_scf == 1 and "Magnetic moment per site:" in line:
                 for j in range(self.nat):
-                    self.magn[j] = np.asarray(
+                    self.magnet[j] = np.asarray(
                         self.lines[i+1+j].strip().split()
                     )[5]
 
@@ -647,6 +654,11 @@ class qe_out(object):
                     # substitute any digit in self.atomsfull with nothing
                     self.atoms[j] = re.sub(r"[^a-zA-Z]", "", self.atomsfull[j])
                     self.atomic_pos[j] = self.lines[i+3+j].strip().split()[6:9]
+                # The following converts the fractional crystal coordinates
+                # to cartesian coordinates in angstrom
+                self.ap_cart_coord = np.matmul(
+                        self.atomic_pos, self.cryst_axes
+                    )
             if "End of BFGS Geometry Optimization" in line:
                 is_geometry_optimized = True
                 if "crystal" in self.lines[i+5]: # crystal fractional coordinate
@@ -723,6 +735,11 @@ class qe_out(object):
 
 
 #------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
 def read_vac(dir_f=".avg.out"):
     """
@@ -756,6 +773,11 @@ def read_vac(dir_f=".avg.out"):
     vac = np.asarray(vac) * spc.physical_constants["Hartree energy in eV"][0]/2
     return(z, vac)
 
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
     
 class band_out_and_band_dat(object):
@@ -873,6 +895,11 @@ class band_out_and_band_dat(object):
                     * (i - indexes_hsymmpts[ii]) + self.xcoords[ii]
                 )
     
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
 
 class qe_bands(object):
@@ -1105,8 +1132,47 @@ class qe_bands(object):
             self.eigenE_dn = self.eigenE[self.nk:, :]
 
 
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 
 
 if __name__ == "__main__":
-    path = os.getcwd()
-    qe = qe_out(path, show_details=True)
+    cwd = os.getcwd()
+    qe = qe_out(cwd, show_details=True)
+
+    if "convap" in sys.argv:
+        dir_f = str(cwd) + "/cnv.txt"
+        atoms_atomic_pos = np.column_stack((qe.atoms, qe.atomic_pos))
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("convert cart_coord to cryst_coord\n")
+        output_file.write("CELL_PARAMETERS angstrom\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("ATOMIC_POSITIONS crystal\n")
+        np.savetxt(output_file, atoms_atomic_pos, "%s")
+        output_file.close()
+
+    if "magnet" in sys.argv:
+        qe.read_magnet()
+        x = np.zeros(qe.nat)
+        y = x
+        # show magnetic moment (scalar) in z-axis
+        magnetic_moment = np.column_stack((x, y, qe.magnet))
+        dir_f = str(cwd) + "/magnet.xsf"
+        ap_cart_coord_magnet = np.column_stack(
+            (qe.ap_cart_coord, magnetic_moment)
+        )
+        inp = np.column_stack((qe.atoms, ap_cart_coord_magnet))
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("CRYSTAL\n")
+        output_file.write("PRIMVEC\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("PRIMCOORD\n")
+        output_file.write(str(qe.nat) + "  1\n")
+        np.savetxt(output_file, inp, "%s")
+        output_file.close()

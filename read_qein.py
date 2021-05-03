@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 import scipy.constants as spc
-sys.path.insert(0, "/home/fagulong/work/github/constants")
+sys.path.insert(0, "/home/lkj/work/github/constants")
 from periodic_table import atoms_properties
 
 
@@ -53,6 +53,7 @@ class qe_in(object):
             elif "ntyp" in line:
                 self.ntyp = int(re.findall(r"[+-]?\d+", line)[0])
 
+        # call dynamic methods
         self.read_cryst_axes()
         self.read_atomic_pos()
         self.read_kpts()
@@ -94,6 +95,39 @@ class qe_in(object):
             self.cryst_axes[0, 0] = a
             self.cryst_axes[1, 0] = -a * np.sin(np.pi/6)
             self.cryst_axes[1, 1] = a * np.cos(np.pi/6)
+            self.cryst_axes[2, 2] = c
+        elif self.ibrav == 8:
+            # the part of code assumes that celldm(1) appears before celldm(2) 
+            # and celldm(3),
+            # and assume that a shows up before b and c
+            for i, line in enumerate(self.lines):
+                if "celldm(1)" in line:
+                    celldm1 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
+                    a = celldm1 * Bohr2Ang
+                elif "celldm(2)" in line:
+                    celldm2 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
+                    b = a * celldm2
+                elif "celldm(3)" in line:
+                    celldm3 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
+                    c = a * celldm3
+                elif (
+                    re.match("a", line.strip()) 
+                    and not re.search(r"[b-zB-Z]", line.strip())
+                ):
+                    a = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+                elif (
+                    re.match("b", line.strip()) 
+                    and not re.search(r"[aAc-zC-Z]", line.strip())
+                ):
+                    b = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+                elif (
+                    re.match("c", line.strip()) 
+                    and not re.search(r"[a-bA-Bd-zD-Z]", line.strip())
+                ):
+                    c = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+
+            self.cryst_axes[0, 0] = a
+            self.cryst_axes[1, 1] = b
             self.cryst_axes[2, 2] = c
 
 
