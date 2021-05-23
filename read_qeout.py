@@ -270,13 +270,15 @@ class qe_out(object):
             if self.xc_functional == "PBE":
                 self.final_energy = self.etot[-1]
             else: # hybrid functionals or functionals with vdW_corr
-                try:
+                if self.xc_functional == "PBE0" or self.xc_functional == "HSE":
                     # if hybrid calculation, and it can converge
-                    print("Hybrid calculation is not done")
+                    if self.show_details:
+                        print("Hybrid calculation is not done")
                     self.final_energy = self.exx_etot[-1]
-                except:
+                else:
                     # if not hybrid, or other functionals do not converge
-                    print("Calculation is not done or not converged")
+                    if self.show_details:
+                        print("Calculation is not done or not converged")
                     self.final_energy = self.etot[-1]
         if self.show_details:
             print("Final energy = {} eV".format(self.final_energy))
@@ -690,7 +692,8 @@ class qe_out(object):
                     )
 
         if not is_geometry_optimized:
-            print("This is a single-point calculation (scf or nscf).")
+            if self.show_details:
+                print("This is a single-point calculation (scf or nscf).")
         
         
         for i in range(self.nat):
