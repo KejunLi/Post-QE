@@ -59,30 +59,36 @@ def bands_kpath(path_input=None, path_output=None):
 
 
 if __name__ == "__main__":
-    path = "/home/lkj/work/c2cn/fix_atoms_5A/6x6/nonradiative/bands/job_bands"
+    path = "/home/lkj/work/copper_sulfur"
     pathin = os.path.join(path, "nscf_for_bands.in")
     pathout = os.path.join(path, "nscf_for_bands.out")
-    vac = 0.162307899*spc.physical_constants["Hartree energy in eV"][0]/2
-    fermi = -2.4572
+    # electrostatic potential (vacuum energy)
+    vac = 0*spc.physical_constants["Hartree energy in eV"][0]/2
+    # Fermi level
+    fermi = 11.9932
     x = bands_kpath(path_input=pathin, path_output=pathout)
     if x[-1]:
         for i in range(x[2].shape[0]):
             if i == 0:
-                plt.plot(x[0], x[2][i]-vac, color="tab:red", label="Spin Up")
-                plt.plot(x[0], x[3][i]-vac, color="tab:blue", label="Spin Down")
+                plt.plot(
+                    x[0], x[2][i]-vac-fermi, color="tab:red", label="Spin Up"
+                )
+                plt.plot(
+                    x[0], x[3][i]-vac-fermi, color="tab:blue", label="Spin Down"
+                )
             else:
-                plt.plot(x[0], x[2][i]-vac, color="tab:red")
-                plt.plot(x[0], x[3][i]-vac, color="tab:blue")
+                plt.plot(x[0], x[2][i]-vac-fermi, color="tab:red")
+                plt.plot(x[0], x[3][i]-vac-fermi, color="tab:blue")
     else:
         for i in range(x[2].shape[0]):
-            plt.plot(x[0], x[2][i]-vac, color="tab:red")
+            plt.plot(x[0], x[2][i]-vac-fermi, color="tab:red")
 
     for i in range(len(x[1])):
         plt.axvline(x[1][i], color="k", linewidth=0.8)
-    plt.legend()
-    plt.axhline(fermi-vac, linestyle="--", color="k", linewidth=0.8)
+    # plt.legend()
+    plt.axhline(0, linestyle="--", color="k", linewidth=0.8)
     plt.xlim(np.amin(x[0]), np.amax(x[0]))
-    plt.ylim(-6.8, -0.5)
-    plt.xticks(x[1], ["$\mathrm{\Gamma}$", "M", "K", "$\mathrm{\Gamma}$"])
+    plt.ylim(-2, 2)
+    plt.xticks(x[1], ["M", "$\mathrm{\Gamma}$", "Z"])
     plt.ylabel("$\mathrm{E-E_{vac}}$ (eV)")
     plt.show()
