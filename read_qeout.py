@@ -182,8 +182,9 @@ class qe_out(object):
                         re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
                     ).astype(np.float)
                     self.kpts_cryst_coord[j, :] = np.array(
-                        re.findall(r"[+-]?\d+\.\d*", \
-                        self.lines[i+j+4+self.nk])[0:3]
+                        re.findall(
+                            r"[+-]?\d+\.\d*", self.lines[i+j+4+self.nk]
+                        )[0:3]
                     ).astype(np.float)
             elif "SPIN" in line:
                 self.spinpol = True
@@ -347,23 +348,23 @@ class qe_out(object):
                 temp_occ = self.lines[i+4+rows : i+4+rows*2]
                 for j in range(rows):
                     if int_multi_8:
-                        self.eigenE[k_counted, j*8:(j+1)*8] = np.asarray(
-                            temp_E[j].strip().split()
-                        )
+                        self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
+                                "[+-]?\d+\.\d*", temp_E[j]
+                            )
                         self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
                             temp_occ[j].strip().split()
                         )
                     else:
                         if j < rows -1:
-                            self.eigenE[k_counted, j*8:(j+1)*8] = np.asarray(
-                                temp_E[j].strip().split()
+                            self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
+                                "[+-]?\d+\.\d*", temp_E[j]
                             )
                             self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
                                 temp_occ[j].strip().split()
                             )
                         else:
-                            self.eigenE[k_counted, j*8:j*8+modulo] = np.asarray(
-                                temp_E[j].strip().split()
+                            self.eigenE[k_counted, j*8:j*8+modulo] = re.findall(
+                                "[+-]?\d+\.\d*", temp_E[j]
                             )
                             self.occ[k_counted, j*8:j*8+modulo] = np.asarray(
                                 temp_occ[j].strip().split()
@@ -426,10 +427,14 @@ class qe_out(object):
                 "Empty band wanted\n"
             
             # evaluate the direct and indirect band gaps
-            self.direct_gap_up = self.eigenE_up[:, int(self.up_ne)] - \
-                            self.eigenE_up[:, int(self.up_ne-1)]
-            self.direct_gap_dn = self.eigenE_dn[:, int(self.dn_ne)] - \
-                            self.eigenE_dn[:, int(self.dn_ne-1)]
+            self.direct_gap_up = (
+                self.eigenE_up[:, int(self.up_ne)] - 
+                self.eigenE_up[:, int(self.up_ne-1)]
+            )
+            self.direct_gap_dn = (
+                self.eigenE_dn[:, int(self.dn_ne)] - 
+                self.eigenE_dn[:, int(self.dn_ne-1)]
+            )
             self.direct_gap = np.concatenate(
                 (self.direct_gap_up, self.direct_gap_dn)
             )
@@ -990,7 +995,7 @@ class qe_bands(object):
             elif "mixing beta" in line:
                 self.mixing_beta = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
             elif "Exchange-correlation" in line:
-                self.xc_functional = line.strip().split()[2]
+                self.xc_functional = re.search(r"PBE0|PBE|HSE|.", line).group(0)
             elif "EXX-fraction" in line:
                 self.exx_fraction = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
             elif "spin-orbit" in line:
@@ -1116,17 +1121,17 @@ class qe_bands(object):
                 temp_E = self.lines[i+2 : i+2+rows]
                 for j in range(rows):
                     if int_multi_8:
-                        self.eigenE[k_counted, j*8:(j+1)*8] = np.asarray(
-                            temp_E[j].strip().split()
+                        self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
+                                "[+-]?\d+\.\d*", temp_E[j]
                         )
                     else:
                         if j < rows -1:
-                            self.eigenE[k_counted, j*8:(j+1)*8] = np.asarray(
-                                temp_E[j].strip().split()
+                            self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
+                                "[+-]?\d+\.\d*", temp_E[j]
                             )
                         else:
-                            self.eigenE[k_counted, j*8:j*8+modulo] = np.asarray(
-                                temp_E[j].strip().split()
+                            self.eigenE[k_counted, j*8:j*8+modulo] = re.findall(
+                                "[+-]?\d+\.\d*", temp_E[j]
                             )
                 k_counted += 1
         
