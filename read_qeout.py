@@ -414,6 +414,7 @@ class qe_out(object):
         +   and indirect bandgap
         ++----------------------------------------------------------------------
         """
+        go_cal_bandgap = True
         if self.spinpol:    # spin polarized
             nk_spin = self.nk * 2
             self.direct_gap = np.zeros(nk_spin)
@@ -421,11 +422,17 @@ class qe_out(object):
             self.direct_gap_dn = np.zeros(self.nk)
             kpts = np.concatenate(
                 (self.kpts_cryst_coord, self.kpts_cryst_coord), axis=0
-            ) # the first half for spin up, the second for spin down
+            ) # the first half for spin up, the second half for spin down
             
-            assert self.nbnd > self.up_ne and self.nbnd > self.dn_ne, \
-                "Empty band wanted\n"
             
+            # assert self.nbnd > self.up_ne or self.nbnd > self.dn_ne, \
+            #     "Need empty bands to get bandgaps"
+            if self.nbnd <= self.up_ne or self.nbnd <= self.dn_ne:
+                go_cal_bandgap = False
+                if self.show_details:
+                    print("Stop calculating bandgaps due to no empty bands")
+                sys.exit(0)
+
             # evaluate the direct and indirect band gaps
             self.direct_gap_up = (
                 self.eigenE_up[:, int(self.up_ne)] - 
@@ -508,7 +515,12 @@ class qe_out(object):
             self.direct_gap = np.zeros(self.nk)
             kpts = self.kpts_cryst_coord
             if not self.soc:
-                assert self.nbnd > self.ne/2, "Empty band wanted\n"
+                # assert self.nbnd > self.ne/2, "Need empty bands to get bandgaps"
+                if self.nbnd <= self.ne/2:
+                    go_cal_bandgap = False
+                    if self.show_details:
+                        print("Stop calculating bandgaps due to no empty bands")
+                    sys.exit(0)
 
                 for i in range(self.nk):
                     self.direct_gap[i] = (
@@ -529,7 +541,12 @@ class qe_out(object):
                     self.eigenE[:, int(self.ne/2-1)] == vbm
                 )[0][0]
             else:
-                assert self.nbnd > self.ne, "Empty band wanted\n"
+                # assert self.nbnd > self.ne, "Need empty bands to get bandgaps"
+                if self.nbnd <= self.ne:
+                    go_cal_bandgap = False
+                    if self.show_details:
+                        print("Stop calculating bandgaps due to no empty bands")
+                    sys.exit(0)
 
                 for i in range(self.nk):
                     self.direct_gap[i] = (
@@ -555,7 +572,7 @@ class qe_out(object):
         k_cbm = self.kpts_cryst_coord[index_k_cbm]
         k_vbm = self.kpts_cryst_coord[index_k_vbm]
         
-        if self.show_details:
+        if go_cal_bandgap and self.show_details:
             print(
                 "CBM = {} eV is at No.{} k point: {}"
                 .format(cbm, index_k_cbm+1, k_cbm)
@@ -570,7 +587,7 @@ class qe_out(object):
                     np.min(self.direct_gap), 
                     kpts[
                         np.where(self.direct_gap == np.min(self.direct_gap))[0]
-                    ] # more than one smallest direct bandgap, e.g. MoS2
+                    ] # the smallest bandgap is at more than one k pt, e.g. MoS2
                 )
             )
 
