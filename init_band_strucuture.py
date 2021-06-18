@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import scipy.constants as spc
 from read_qein import qe_in
 from read_qeout import qe_bands
-plt.style.use("/home/lkj/work/github/styles/wamum")
+plt.style.use("/home/lkj/work/github/styles/bandstructure")
 
 
 def bands_kpath(path_input=None, path_output=None):
@@ -17,18 +17,18 @@ def bands_kpath(path_input=None, path_output=None):
     ++--------------------------------------------------------------------------
     +   if not spin polarized
     +   return
-    +   xcoords (coordinates of k path in x axis)
-    +   xcoords_of_hsymmpts (coordinates of special k points in x axis)
-    +   E (eigenvalues in all bands and at all k points)
-    +   bandsout.spinpol (boolean value, False)
+    +   1. xcoords (coordinates of k path in x axis)
+    +   2. xcoords_of_hsymmpts (coordinates of special k points in x axis)
+    +   3. E (eigenvalues in all bands and at all k points)
+    +   4. bandsout.spinpol (boolean value, False)
     ++--------------------------------------------------------------------------
     +   if spin polarized
     +   return
-    +   xcoords (coordinates of k path in x axis)
-    +   xcoords_of_hsymmpts (coordinates of special k points in x axis)
-    +   E_up (spin up eigenvalues in all bands and at all k points)
-    +   E_dn (spin down eigenvalues in all bands and at all k points)
-    +   bandsout.spinpol (boolean value, True)
+    +   1. xcoords (coordinates of k path in x axis)
+    +   2. xcoords_of_hsymmpts (coordinates of special k points in x axis)
+    +   3. E_up (spin up eigenvalues in all bands and at all k points)
+    +   4. E_dn (spin down eigenvalues in all bands and at all k points)
+    +   5. bandsout.spinpol (boolean value, True)
     ++--------------------------------------------------------------------------
     """
     bandsin = qe_in(path_input)
@@ -59,36 +59,46 @@ def bands_kpath(path_input=None, path_output=None):
 
 
 if __name__ == "__main__":
-    path = "/home/lkj/work/copper_sulfur"
+    path = "/home/lkj/work/2d_perovskite/S-NPB/0_scf_wsoc_pbe/job_bands"
     pathin = os.path.join(path, "nscf_for_bands.in")
     pathout = os.path.join(path, "nscf_for_bands.out")
     # electrostatic potential (vacuum energy)
     vac = 0*spc.physical_constants["Hartree energy in eV"][0]/2
     # Fermi level
-    fermi = 11.9932
+    fermi = 1.6642
     x = bands_kpath(path_input=pathin, path_output=pathout)
-    if x[-1]:
+
+    fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
+    if x[-1]: # spin polarized
         for i in range(x[2].shape[0]):
             if i == 0:
-                plt.plot(
+                ax.plot(
                     x[0], x[2][i]-vac-fermi, color="tab:red", label="Spin Up"
                 )
-                plt.plot(
+                ax.plot(
                     x[0], x[3][i]-vac-fermi, color="tab:blue", label="Spin Down"
                 )
             else:
-                plt.plot(x[0], x[2][i]-vac-fermi, color="tab:red")
-                plt.plot(x[0], x[3][i]-vac-fermi, color="tab:blue")
-    else:
+                ax.plot(x[0], x[2][i]-vac-fermi, color="tab:red")
+                ax.plot(x[0], x[3][i]-vac-fermi, color="tab:blue")
+    else: # spin unpolarized or soc
         for i in range(x[2].shape[0]):
-            plt.plot(x[0], x[2][i]-vac-fermi, color="tab:red")
+            if (x[2][i]-vac-fermi  <= 0).any():
+                ax.plot(x[0], x[2][i]-vac-fermi, color="tab:green")
+            else:
+                ax.plot(x[0], x[2][i]-vac-fermi, color="tab:red")
 
     for i in range(len(x[1])):
-        plt.axvline(x[1][i], color="k", linewidth=0.8)
-    # plt.legend()
-    plt.axhline(0, linestyle="--", color="k", linewidth=0.8)
-    plt.xlim(np.amin(x[0]), np.amax(x[0]))
-    plt.ylim(-2, 2)
-    plt.xticks(x[1], ["M", "$\mathrm{\Gamma}$", "Z"])
-    plt.ylabel("$\mathrm{E-E_{vac}}$ (eV)")
+        ax.axvline(x[1][i], color="k", linewidth=0.8)
+    # ax.legend()
+    ax.axhline(0, linestyle="--", color="k", linewidth=0.8)
+    ax.set_xlim(np.amin(x[0]), np.amax(x[0]))
+    # set the lower and upper limits of the plot
+    ax.set_ylim(-2, 5)
+    # replace the numbers of high symmetry points with labels
+    ax.set_xticks(x[1])
+    ax.set_xticklabels(
+        ["Y", "$\mathrm{\Gamma}$", "Z" , "$\mathrm{\Gamma}$", "X"]
+    )
+    ax.set_ylabel("Energy (eV)")
     plt.show()
