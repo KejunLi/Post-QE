@@ -52,6 +52,7 @@ class cstr_atoms(object):
     +
     +   Attributes:
     +   self.isfree (boolean values, determine if atoms are free to move)
+    +   self.fake_atoms (an array of atoms of which are He beyond the sphere)
     +
     +   No return
     ++--------------------------------------------------------------------------
@@ -125,6 +126,8 @@ class cstr_atoms(object):
         b = np.matmul([0, 1, 0], self.cryst_axes)
         c = np.matmul([0, 0, 1], self.cryst_axes)
 
+        # meanings of array indices in order:
+        # block position: i, j, k; atom_i; atomic_pos: x, y, z
         self.cubes = np.zeros((3, 3, 3, self.nat, 3))
         self.cubes_mass = np.zeros((3, 3, 3, self.nat))
         x = [-1, 0, 1]
@@ -138,6 +141,7 @@ class cstr_atoms(object):
                     )
                     self.cubes_mass[i, j, k, :] = self.atomic_mass
         
+        # reshape the array to make it convenient to plot
         all_ap_cart_coord = self.cubes.reshape(27*self.nat, 3)
         all_mass = self.cubes_mass.reshape(27*self.nat)
         return(all_ap_cart_coord, all_mass)
@@ -177,8 +181,13 @@ class cstr_atoms(object):
         +   self.isfree is the judgement for whether atoms are free to move
         ++----------------------------------------------------------------------
         """
-        isinsphere = np.full((3, 3, 3, self.nat), True)
-        self.isfree = np.full(self.nat, False)
+        # initialization
+        isinsphere = np.full((3, 3, 3, self.nat), True) # value true
+        self.isfree = np.full(self.nat, False) # value true
+        # fake array of atoms with all atoms to be He
+        self.fake_atoms = np.full(self.nat, "He")
+
+        # atoms in the block (i, j, k)
         for i in range(3):
             for j in range(3):
                 for k in range(3):
@@ -187,11 +196,15 @@ class cstr_atoms(object):
                     isinsphere[i, j, k, :] = (dist < radius)
                     for l in range(self.nat):
                         if isinsphere[i, j, k, l] == True:
+                            # allow atom l to move
                             self.isfree[l] = True
+                            # replace He in the sphere with original atoms
+                            self.fake_atoms[l] = self.atoms[l]
                         else:
                             # constain atoms and
                             # decrease the weight of constraint atoms
                             self.cubes_mass[i, j, k, l] /=2
+                            
 
         
     def cstr_atoms(self):
