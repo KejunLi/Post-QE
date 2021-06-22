@@ -6,29 +6,23 @@ from read_qeout import qe_out
 
 cwd = os.getcwd()
 
+f_relax = []
+etot = []
 
-gs = qe_out(os.path.join(cwd, "relax-gs/relax.out"), show_details=False)
+for f in os.listdir(cwd):
+    if f.startswith("relax"):
+        qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
+        f_relax.append(f)
+        etot.append(qe.final_energy)
 
-if "relax-cdftup1" in os.listdir(cwd):
-    es = qe_out(os.path.join(cwd, "relax-cdftup1/relax.out"), show_details=False)
-    zpl = es.final_energy - gs.final_energy
-    print("ZPL = {} eV (cdftup1-gs)".format(zpl))
-elif "relax-cdftup2" in os.listdir(cwd):
-    es = qe_out(os.path.join(cwd, "relax-cdftup2/relax.out"), show_details=False)
-    zpl = es.final_energy - gs.final_energy
-    print("ZPL = {} eV (cdftup2-gs)".format(zpl))
-elif "relax-cdftdn1" in os.listdir(cwd):
-    es = qe_out(os.path.join(cwd, "relax-cdftdn1/relax.out"), show_details=False)
-    zpl = es.final_energy - gs.final_energy
-    print("ZPL = {} eV (cdftdn1-gs)".format(zpl))
-elif "relax-cdftdn2" in os.listdir(cwd):
-    es = qe_out(os.path.join(cwd, "relax-cdftdn2/relax.out"), show_details=False)
-    zpl = es.final_energy - gs.final_energy
-    print("ZPL = {} eV (cdftdn2-gs)".format(zpl))
-elif "relax-es" in os.listdir(cwd):
-    es = qe_out(os.path.join(cwd, "relax-es/relax.out"), show_details=False)
-    zpl = es.final_energy - gs.final_energy
-    print("ZPL = {} eV (es-gs)".format(zpl))
-else:
-    print("no state match")
+for i in range(len(f_relax)):
+    j = i
+    while j < len(f_relax):
+        diff_E = etot[i] - etot[j+1]
+        diff_E = np.abs(diff_E)
+        print("diff_E = {} eV ({}-{})".format(diff_E, f_relax[i], f_relax[j+1]))
+        j += 1
+
+
+
 
