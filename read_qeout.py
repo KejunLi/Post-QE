@@ -30,6 +30,7 @@ class qe_out(object):
     +   self.kpts_cart_coord (k points in cartesian coordinates)
     +   self.kpts_cryst_coord (k points in crystal coordinates)
     +   self.spinpol (is spin polarization?)
+    +   self.exist_occ (does occupations exist? need verbosity=high)
     +   self.soc (is spin-orbit coupling?)
     +   self.scf_cycle (number of scf cycles)
     +
@@ -124,6 +125,7 @@ class qe_out(object):
         self.up_ne = 0
         self.dn_ne = 0
         self.soc = False
+        self.exist_occ = False
         self.scf_cycle = 0
         self.exx_scf_cycle = 0
         Bohr2Ang = spc.physical_constants["Bohr radius"][0]/1e-10
@@ -156,6 +158,7 @@ class qe_out(object):
             elif "celldm(1)" in line: # lattic constant
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
+                # convert bohr to angstron for celldm1
                 celldm1 = (
                     float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Bohr2Ang
                 )
@@ -167,7 +170,6 @@ class qe_out(object):
                         r"[+-]?\d+\.\d*", self.lines[i+9+j]
                     )
                 self.cryst_axes = self.cryst_axes * celldm1
-                self.R_axes = self.R_axes / celldm1
             elif "atomic species   valence    mass" in line:
                 temp = self.lines[i+1:i+self.ntyp+1]
                 for j in range(self.ntyp):
@@ -177,17 +179,33 @@ class qe_out(object):
                 self.nk = int(re.findall(r"[+-]?\d+", line)[0])
                 self.kpts_cart_coord = np.zeros((self.nk, 3))
                 self.kpts_cryst_coord = np.zeros((self.nk, 3))
-                for j in range(self.nk):
-                    self.kpts_cart_coord[j, :] = np.array(
-                        re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
-                    ).astype(np.float)
-                    self.kpts_cryst_coord[j, :] = np.array(
-                        re.findall(
-                            r"[+-]?\d+\.\d*", self.lines[i+j+4+self.nk]
-                        )[0:3]
-                    ).astype(np.float)
+                if "cart. coord." in self.lines[i+1]:
+                    for j in range(self.nk):
+                        self.kpts_cart_coord[j, :] = np.array(
+                            re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
+                        ).astype(np.float)
+                if "cryst. coord." in self.lines[i+self.nk+3]:
+                    # exist only when being verbosity
+                    for j in range(self.nk):
+                        self.kpts_cryst_coord[j, :] = np.array(
+                            re.findall(
+                                r"[+-]?\d+\.\d*", self.lines[i+j+4+self.nk]
+                            )[0:3]
+                        ).astype(np.float)
+                else:
+                    # convert kpts_cart_coord when not verbose
+                    inv_R_axes = np.linalg.inv(self.R_axes)
+                    self.kpts_cryst_coord = np.matmul(
+                        self.kpts_cart_coord, inv_R_axes
+                    )
+                    # round the numbers
+                    self.kpts_cryst_coord = np.around(
+                        self.kpts_cryst_coord, decimals=6
+                    )
             elif "SPIN" in line:
                 self.spinpol = True
+            elif "occupation numbers" in line: # exist only when being verbosity
+                self.exist_occ = True
             elif "End of self-consistent calculation" in line:
                 self.scf_cycle += 1
             elif "EXX self-consistency reached" in line:
@@ -228,10 +246,10 @@ class qe_out(object):
         
         # call all the dynamic methods
         self.read_etot()
+        self.read_atomic_pos()
+        self.read_miscellus()
         self.read_eigenenergies()
         self.read_bandgap()
-        self.read_atomic_pos()
-        #self.read_miscellus()
 
     def read_etot(self):
         """
@@ -263,6 +281,8 @@ class qe_out(object):
                 )
                 exx_etot_count += 1
             elif "Final" in line:
+                if self.show_details:
+                    print("Geometry optimization done")
                 final_energy = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
                 self.final_energy = final_energy * Ry2eV
                 break
@@ -351,32 +371,36 @@ class qe_out(object):
                         self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
                                 "[+-]?\d+\.\d*", temp_E[j]
                             )
-                        self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
-                            temp_occ[j].strip().split()
-                        )
+                        if self.exist_occ:
+                            self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
+                                temp_occ[j].strip().split()
+                            )
                     else:
                         if j < rows -1:
                             self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
                                 "[+-]?\d+\.\d*", temp_E[j]
                             )
-                            self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
-                                temp_occ[j].strip().split()
-                            )
+                            if self.exist_occ:
+                                self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
+                                    temp_occ[j].strip().split()
+                                )
                         else:
                             self.eigenE[k_counted, j*8:j*8+modulo] = re.findall(
                                 "[+-]?\d+\.\d*", temp_E[j]
                             )
-                            self.occ[k_counted, j*8:j*8+modulo] = np.asarray(
-                                temp_occ[j].strip().split()
-                            )
+                            if self.exist_occ:
+                                self.occ[k_counted, j*8:j*8+modulo] = np.asarray(
+                                    temp_occ[j].strip().split()
+                                )
                 k_counted += 1
         
         if self.spinpol:
             self.eigenE_up = self.eigenE[:self.nk, :]
             self.eigenE_dn = self.eigenE[self.nk:, :]
-            self.occ_up = self.occ[:self.nk, :]
-            self.occ_dn = self.occ[self.nk:, :]
-            if self.up_ne == 0:
+            if self.exist_occ:
+                self.occ_up = self.occ[:self.nk, :]
+                self.occ_dn = self.occ[self.nk:, :]
+            if self.up_ne == 0 and self.exist_occ:
                 # self.up_ne = np.where(
                 #                 self.occ[0, :] - self.occ[self.nk, :] != 0
                 #                 )[0][-1] + 1
@@ -415,7 +439,14 @@ class qe_out(object):
         ++----------------------------------------------------------------------
         """
         go_cal_bandgap = True
-        if self.spinpol:    # spin polarized
+        if not self.exist_occ:
+            print(
+                "Not able to calculate bandgap because no occupations found. "
+                + "'verbosity=high is required'. Exit."
+            )
+            sys.exit(0) # this will stop the whole running of the program!
+
+        if self.spinpol: # spin polarized
             nk_spin = self.nk * 2
             self.direct_gap = np.zeros(nk_spin)
             self.direct_gap_up = np.zeros(self.nk)
@@ -430,8 +461,8 @@ class qe_out(object):
             if self.nbnd <= self.up_ne or self.nbnd <= self.dn_ne:
                 go_cal_bandgap = False
                 if self.show_details:
-                    print("Stop calculating bandgaps due to no empty bands")
-                sys.exit(0)
+                    print("Stop calculating bandgaps due to no empty bands. Exit.")
+                sys.exit(0) # this will stop the whole running of the program!
 
             # evaluate the direct and indirect band gaps
             self.direct_gap_up = (
@@ -455,8 +486,7 @@ class qe_out(object):
             )
             self.indirect_gap = min(indirect_gap_up, indirect_gap_dn)
 
-            # look for the k points where the direct, indrect band gaps and 
-            # vbm, cbm are
+            # look for the k points where the direct, indrect band gaps and vbm, cbm are
             if (
                 self.indirect_gap == indirect_gap_up and 
                 self.indirect_gap != indirect_gap_dn
@@ -511,7 +541,7 @@ class qe_out(object):
                     .format(dir_channel)
                 )
 
-        else:   # not spin polarized
+        else: # not spin polarized
             self.direct_gap = np.zeros(self.nk)
             kpts = self.kpts_cryst_coord
             if not self.soc:
@@ -519,8 +549,8 @@ class qe_out(object):
                 if self.nbnd <= self.ne/2:
                     go_cal_bandgap = False
                     if self.show_details:
-                        print("Stop calculating bandgaps due to no empty bands")
-                    sys.exit(0)
+                        print("Stop calculating bandgaps due to no empty bands. Exit.")
+                    sys.exit(0) # this will stop the whole running of the program!
 
                 for i in range(self.nk):
                     self.direct_gap[i] = (
@@ -545,8 +575,8 @@ class qe_out(object):
                 if self.nbnd <= self.ne:
                     go_cal_bandgap = False
                     if self.show_details:
-                        print("Stop calculating bandgaps due to no empty bands")
-                    sys.exit(0)
+                        print("Stop calculating bandgaps due to no empty bands. Exit.")
+                    sys.exit(0) # this will stop the whole running of the program!
 
                 for i in range(self.nk):
                     self.direct_gap[i] = (
