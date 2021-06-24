@@ -17,7 +17,7 @@ for f in os.listdir(cwd):
 
 for i in range(len(f_relax)):
     j = i
-    while j < len(f_relax):
+    while j+1 < len(f_relax):
         diff_E = etot[i] - etot[j+1]
         diff_E = np.abs(diff_E)
         print("diff_E = {} eV ({}-{})".format(diff_E, f_relax[i], f_relax[j+1]))
