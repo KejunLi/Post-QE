@@ -12,6 +12,7 @@ etot = []
 for f in os.listdir(cwd):
     if f.startswith("relax"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
+        # if qe_out exits, the code will stop here
         f_relax.append(f)
         etot.append(qe.final_energy)
 
