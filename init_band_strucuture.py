@@ -9,7 +9,7 @@ from read_qeout import qe_bands
 plt.style.use("/home/lkj/work/github/styles/bandstructure")
 
 
-def bands_kpath(path_input=None, path_output=None):
+def bands_vs_kpath(path_input=None, path_output=None):
     """
     ++--------------------------------------------------------------------------
     +   Input: path to Quantum Espresso pw.x input and output files
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     vac = 0*spc.physical_constants["Hartree energy in eV"][0]/2
     # Fermi level
     fermi = 12.2493
-    x = bands_kpath(path_input=pathin, path_output=pathout)
+    x = bands_vs_kpath(path_input=pathin, path_output=pathout)
 
     fig, ax = plt.subplots(nrows=1, ncols=1, constrained_layout=True)
     if x[-1]: # spin polarized
