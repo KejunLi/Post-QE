@@ -48,13 +48,14 @@ def bands_vs_kpath(path_input=None, path_output=None):
             xcoords[i+1] = np.linalg.norm(kpoints[i+1]-kpoints[i], ord=2) + \
                 xcoords[i]
     
-    # obtain the high symmetry k points
+    # obtain the high symmetry k points in the k path
     division = bandsin.division
     for i in range(bandsin.num_hsymmpts):
         xcoords_of_hsymmpts[i] = xcoords[np.sum(division[:i])]
     
     # return k point path, high symmetry k points and bands
     if not bandsout.spinpol:
+        # convert the shape of eigenvalues to (nbnd, nk) from (nk, nbnd)
         E = np.transpose(bandsout.eigenE)
         return(xcoords, xcoords_of_hsymmpts, E, bandsout.spinpol)
     else:
