@@ -933,7 +933,7 @@ class band_out_and_band_dat(object):
                     else:
                         indexes_hsymmpts[i] = j
         
-        # evaluate x coordinates of k points
+        # evaluate the distance of k points along x-axis
         ii = 0
         for i in range(self.nks):
             if i <= indexes_hsymmpts[ii+1]:
@@ -961,7 +961,7 @@ class qe_bands(object):
     """
     ++--------------------------------------------------------------------------
     +   Input: path to Quantum Espresso pw.x output file
-    +   specifically, nscf_for_bands.out
+    +   specifically, nscf_for_bands.out. calculation='bands'
     ++--------------------------------------------------------------------------
     +   1. Constructor
     +   Attributes:
@@ -1071,14 +1071,29 @@ class qe_bands(object):
                 self.nk = int(re.findall(r"[+-]?\d+", line)[0])
                 self.kpts_cart_coord = np.zeros((self.nk, 3))
                 self.kpts_cryst_coord = np.zeros((self.nk, 3))
-                for j in range(self.nk):
-                    self.kpts_cart_coord[j, :] = np.array(
-                        re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
-                    ).astype(np.float)
-                    self.kpts_cryst_coord[j, :] = np.array(
-                        re.findall(r"[+-]?\d+\.\d*", \
-                        self.lines[i+j+4+self.nk])[0:3]
-                    ).astype(np.float)
+                if "cart. coord." in self.lines[i+1]:
+                    for j in range(self.nk):
+                        self.kpts_cart_coord[j, :] = np.array(
+                            re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
+                        ).astype(np.float)
+                if "cryst. coord." in self.lines[i+self.nk+3]:
+                    # exist only when being verbosity
+                    for j in range(self.nk):
+                        self.kpts_cryst_coord[j, :] = np.array(
+                            re.findall(
+                                r"[+-]?\d+\.\d*", self.lines[i+j+4+self.nk]
+                            )[0:3]
+                        ).astype(np.float)
+                else:
+                    # convert kpts_cart_coord when not verbose
+                    inv_R_axes = np.linalg.inv(self.R_axes)
+                    self.kpts_cryst_coord = np.matmul(
+                        self.kpts_cart_coord, inv_R_axes
+                    )
+                    # round the numbers
+                    self.kpts_cryst_coord = np.around(
+                        self.kpts_cryst_coord, decimals=6
+                    )
             elif "SPIN" in line:
                 self.spinpol = True
         
