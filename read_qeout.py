@@ -869,6 +869,9 @@ class band_out_and_band_dat(object):
                 i += 1
             elif i == self.num_hsymmpts:
                 break
+        
+        # call all the dynamic methods
+        self.read_bands_kpts()
     
     def read_bands_kpts(self):
         """
@@ -900,10 +903,12 @@ class band_out_and_band_dat(object):
             int_multi_10 = False
         
         for i in range(self.nks):
+            # read k points from bands.dat file
             self.kpts[i] = np.asarray(
                 self.dat_lines[i*(rows+1)+1].strip().split()
             )
             for j in range(rows):
+                # read eigenvalues or spin expectation values from bands.dat or bands.dat.3
                 if int_multi_10:
                     self.eigenE[i, j*10:(j+1)*10] = np.asarray(
                         self.dat_lines[i*(rows+1)+2+j].strip().split()
