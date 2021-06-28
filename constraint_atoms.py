@@ -130,6 +130,7 @@ class cstr_atoms(object):
         # block position: i, j, k; atom_i; atomic_pos: x, y, z
         self.cubes = np.zeros((3, 3, 3, self.nat, 3))
         self.cubes_mass = np.zeros((3, 3, 3, self.nat))
+        self.cubes_atoms = np.zeros((3, 3, 3, self.nat), dtype="U4")
         x = [-1, 0, 1]
         y = x
         z = x
@@ -140,8 +141,9 @@ class cstr_atoms(object):
                         self.ap_cart_coord + a * xval + b * yval + c * zval
                     )
                     self.cubes_mass[i, j, k, :] = self.atomic_mass
+                    self.cubes_atoms[i, j, k, :] = self.atoms
         
-        # reshape the array to make it convenient to plot
+        # reshape the array to be 2D to make it convenient to plot
         all_ap_cart_coord = self.cubes.reshape(27*self.nat, 3)
         all_mass = self.cubes_mass.reshape(27*self.nat)
         return(all_ap_cart_coord, all_mass)
@@ -191,10 +193,15 @@ class cstr_atoms(object):
         for i in range(3):
             for j in range(3):
                 for k in range(3):
+                    # displacement of the atoms in block ijk to the defined center
                     displ = self.cubes[i, j, k, :, :] - center
+                    # distance to the center
                     dist = np.linalg.norm(displ, axis=1)
+                    # assign true if distance is smaller than defined radius
                     isinsphere[i, j, k, :] = (dist < radius)
                     for l in range(self.nat):
+                        # check the l-th atom in the unitcell, if the l-th atom is allowed to move
+                        # in other periodic image ijk, it is set to be allowed to move in the unitcell
                         if isinsphere[i, j, k, l] == True:
                             # allow atom l to move
                             self.isfree[l] = True
