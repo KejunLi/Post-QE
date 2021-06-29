@@ -3,9 +3,6 @@ import sys
 import numpy as np
 import os
 import re
-sys.path.insert(0, "/home/lkj/work/github/constants")
-from periodic_table import atoms_properties
-
 
 class read_xsf_xyz(object):
     """
@@ -84,9 +81,13 @@ class read_xsf_xyz(object):
             if "PRIMCOORD" in line:
                 self.nat = int(re.findall(r"[+-]?\d+", self.lines[i+1])[0])
         
+        # initialize array for saving data
         self.atoms = np.zeros(self.nat, dtype="U4")
         self.atomic_pos = np.zeros((self.nat, 3))
         self.ap_cart_coord = np.zeros((self.nat, 3))
+
+        # the array for the vector values next to the atomic positions in xsf file
+        self.vec_val = np.zeros((self.nat, 3))
 
         for i, line in enumerate(self.lines):
             if "PRIMCOORD" in line:
@@ -95,6 +96,11 @@ class read_xsf_xyz(object):
                     self.ap_cart_coord[j] = (
                         self.lines[i+2+j].strip().split()[1:4]
                     )
+                    num_elements = len(self.lines[i+2+j].strip().split())
+                    if num_elements == 7:
+                        self.vec_val[j] = (
+                            self.lines[i+2+j].strip().split()[4:]
+                        )
         
         inv_cryst_axes = np.linalg.inv(self.cryst_axes)
 
@@ -113,4 +119,4 @@ class read_xsf_xyz(object):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    xsf_xyz = qe_out(cwd, show_details=True)
+    xsf_xyz = qe_out(cwd)
