@@ -23,7 +23,9 @@ class qe_out(object):
     +   self.mixing_beta (mixing factor for self-consistency)
     +   self.xc_functional (exhange-correlation functional)
     +   self.exx_fraction (exact-exchange fraction)
+    +   self.celldm1 (lattice parameter, angstrom)
     +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
+    +   self.inv_cryst_axes (inverse crystal axes in cartesian coordinates, angstrom^-1)
     +   self.R_axes (reciprocal axes in cartesian coordinates, angstrom^-1)
     +   self.atomic_species (atomic species with mass)
     +   self.nk (number of k points)
@@ -159,7 +161,7 @@ class qe_out(object):
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
                 # convert bohr to angstron for celldm1
-                celldm1 = (
+                self.celldm1 = (
                     float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Bohr2Ang
                 )
                 for j in range(3):
@@ -169,7 +171,8 @@ class qe_out(object):
                     self.R_axes[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+9+j]
                     )
-                self.cryst_axes = self.cryst_axes * celldm1
+                self.cryst_axes = self.cryst_axes * self.celldm1
+                self.inv_cryst_axes = np.linalg.inv(self.cryst_axes)
             elif "atomic species   valence    mass" in line:
                 temp = self.lines[i+1:i+self.ntyp+1]
                 for j in range(self.ntyp):
@@ -249,7 +252,7 @@ class qe_out(object):
         self.read_atomic_pos()
         self.read_miscellus()
         self.read_eigenenergies()
-        self.read_bandgap()
+        #self.read_bandgap()
 
     def read_etot(self):
         """
@@ -702,6 +705,20 @@ class qe_out(object):
         is_geometry_optimized = False
 
         for i, line in enumerate(self.lines):
+            if "Cartesian axes" in line:
+                for j in range(self.nat):
+                    self.atomsfull[j] = self.lines[i+3+j].strip().split()[1]
+                    # substitute any digit in self.atomsfull with nothing
+                    self.atoms[j] = re.sub(r"[^a-zA-Z]", "", self.atomsfull[j])
+                    self.ap_cart_coord[j] = (
+                        self.lines[i+3+j].strip().split()[6:9]
+                    )
+                self.ap_cart_coord *= self.celldm1
+                # The following converts the fractional crystal coordinates
+                # to cartesian coordinates in angstrom
+                self.atomic_pos = np.matmul(
+                        self.ap_cart_coord, self.inv_cryst_axes
+                    )
             if "Crystallographic axes" in line:
                 for j in range(self.nat):
                     self.atomsfull[j] = self.lines[i+3+j].strip().split()[1]
@@ -738,16 +755,15 @@ class qe_out(object):
                         )
                     # The following converts the cartesian coordinates in 
                     # angstrom to fractional crystal coordinates
-                    inv_cryst_axes = np.linalg.inv(self.cryst_axes)
                     self.atomic_pos = np.matmul(
-                        self.ap_cart_coord, inv_cryst_axes
+                        self.ap_cart_coord, self.inv_cryst_axes
                     )
 
         if not is_geometry_optimized:
             if self.show_details:
                 print("This is a single-point calculation (scf or nscf).")
         
-        
+
         for i in range(self.nat):
             self.atomic_mass[i] = self.atomic_species[self.atoms[i]]
     
