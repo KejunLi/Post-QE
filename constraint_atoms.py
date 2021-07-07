@@ -31,7 +31,8 @@ class cstr_atoms(object):
     +   Attributes:
     +   self.cubes (a cube is an image of the supercell, containing atomic
     +   positions in cartesian coordinates)
-    +   self.cubes_mass (corresponding atomic mass in each cube)
+    +   self.cubes_mass (corresponding atomic mass in cubes)
+    +   self.cubes_atoms (atomic species in cubes)
     +
     +   return(all_ap_cart_coord, all_mass)
     ++--------------------------------------------------------------------------
@@ -129,8 +130,12 @@ class cstr_atoms(object):
         # meanings of array indices in order:
         # block position: i, j, k; atom_i; atomic_pos: x, y, z
         self.cubes = np.zeros((3, 3, 3, self.nat, 3))
+        self.cubes_atomic_pos = np.zeros((3, 3, 3, self.nat, 3))
         self.cubes_mass = np.zeros((3, 3, 3, self.nat))
         self.cubes_atoms = np.zeros((3, 3, 3, self.nat), dtype="U4")
+
+        inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+
         x = [-1, 0, 1]
         y = x
         z = x
@@ -140,13 +145,18 @@ class cstr_atoms(object):
                     self.cubes[i, j, k, :, :] = (
                         self.ap_cart_coord + a * xval + b * yval + c * zval
                     )
+                    self.cubes_atomic_pos[i, j, k, :, :] = np.matmul(
+                        self.cubes[i, j, k, :, :], inv_cryst_axes
+                    )
                     self.cubes_mass[i, j, k, :] = self.atomic_mass
                     self.cubes_atoms[i, j, k, :] = self.atoms
         
         # reshape the array to be 2D to make it convenient to plot
         all_ap_cart_coord = self.cubes.reshape(27*self.nat, 3)
+        all_atomic_pos = self.cubes_atomic_pos.reshape(27*self.nat, 3)
         all_mass = self.cubes_mass.reshape(27*self.nat)
-        return(all_ap_cart_coord, all_mass)
+        all_atoms = self.cubes_atoms.reshape(27*self.nat)
+        return(all_atoms, all_atomic_pos, all_ap_cart_coord, all_mass)
 
     def multi_images(self, mul=2):
         """
