@@ -1246,6 +1246,18 @@ if __name__ == "__main__":
         output_file.write("ATOMIC_POSITIONS crystal\n")
         np.savetxt(output_file, atoms_atomic_pos, "%s")
         output_file.close()
+    
+    if "convcy" in sys.argv:
+        dir_f = str(cwd) + "/cnv.txt"
+        atoms_ap_pos = np.column_stack((qe.atoms, qe.ap_cart_coord))
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("convert cryst_coord to cart_coord\n")
+        output_file.write("CELL_PARAMETERS angstrom\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("ATOMIC_POSITIONS angstrom\n")
+        np.savetxt(output_file, atoms_ap_pos, "%s")
+        output_file.close()
 
     if "magnet" in sys.argv:
         qe.read_magnet()
