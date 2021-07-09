@@ -8,6 +8,7 @@ cwd = os.getcwd()
 
 f_relax = []
 etot = []
+nuclear_coord = []
 
 for f in os.listdir(cwd):
     if f.startswith("relax"):
@@ -15,6 +16,8 @@ for f in os.listdir(cwd):
         # if qe_out exits, the code will stop here
         f_relax.append(f)
         etot.append(qe.final_energy)
+        nuclear_coord.append(qe.ap_cart_coord)
+
 
 for i in range(len(f_relax)):
     j = i
@@ -22,6 +25,12 @@ for i in range(len(f_relax)):
         diff_E = etot[i] - etot[j+1]
         diff_E = np.abs(diff_E)
         print("diff_E = {} eV ({}-{})".format(diff_E, f_relax[i], f_relax[j+1]))
+
+        d_coord = nuclear_coord[i] - nuclear_coord[j+1]
+        dq = np.linalg.norm(d_coord, axis=1)**2 * qe.atomic_mass
+        dQ = np.sqrt(np.sum(dq))
+        print("dQ = {} eV ({}-{})".format(dQ, f_relax[i], f_relax[j+1]))
+
         j += 1
 
 
