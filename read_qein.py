@@ -23,13 +23,31 @@ class qe_in(object):
     +   self.nat (number of atoms)
     +   self.ntyp (number of atomic types)
     ++--------------------------------------------------------------------------
-    +   2. Method read_atomic_pos(self)
+    +   2. Method read_cryst_axes(self)
+    +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
+    +   self.ibrav (Bravais-lattice index, now only includes 0, 4, 8)
+    +
+    +   No return
+    ++--------------------------------------------------------------------------
+    +   3. Method read_atomic_pos(self)
     +   self.atoms (atomic name associated with each atomic position)
     +   self.atomic_pos (atomic positions in fractional crystal coordinates)
     +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
-    +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
     +
     +   No return
+    ++--------------------------------------------------------------------------
+    +   3. Method read_kpts(self)
+    +   self.kpts (k points sampling in automatic mode)
+    +   self.num_hsymmpts (number of high symmetric k points)
+    +   self.hsymmpts_cryst (high symmetric k points in crystal coordinate)
+    +   self.division (division in a k path)
+    +
+    +   No return
+    ++--------------------------------------------------------------------------
+    +   4. Method dict_atomic_mass(self, element=None)
+    +   self.dict_Atomic_mass (the dictionary of atomic mass of all common elements)
+    +
+    +   return mass
     ++--------------------------------------------------------------------------
     """
     def __init__(self, path):
@@ -62,7 +80,7 @@ class qe_in(object):
         self.cryst_axes = np.zeros((3, 3))
         Bohr2Ang = spc.physical_constants["Bohr radius"][0]/1e-10
 
-        if self.ibrav == 0:
+        if self.ibrav == 0: # structure is free
             for i, line in enumerate(self.lines):
                 if "CELL_PARAMETERS" in line:
                     for j in range(3):
@@ -71,7 +89,7 @@ class qe_in(object):
                         )
                 else:
                     pass
-        elif self.ibrav == 4:
+        elif self.ibrav == 4: # structure is hexagonal or trigonal
             # the part of code assumes that celldm(1) shows up before celldm(3)
             # and assume that a shows up before c
             for i, line in enumerate(self.lines):
@@ -96,7 +114,8 @@ class qe_in(object):
             self.cryst_axes[1, 0] = -a * np.sin(np.pi/6)
             self.cryst_axes[1, 1] = a * np.cos(np.pi/6)
             self.cryst_axes[2, 2] = c
-        elif self.ibrav == 8:
+
+        elif self.ibrav == 8: # structure is orthorhombic
             # the part of code assumes that celldm(1) appears before celldm(2) 
             # and celldm(3),
             # and assume that a shows up before b and c
@@ -167,10 +186,9 @@ class qe_in(object):
             inv_cryst_axes = np.linalg.inv(self.cryst_axes)
             self.atomic_pos = np.matmul(self.ap_cart_coord, inv_cryst_axes)
 
-        atp = atoms_properties()
         self.atomic_mass = np.zeros(self.nat)
         for i in range(self.nat):
-            self.atomic_mass[i] = atp.atomic_mass(self.atoms[i])
+            self.atomic_mass[i] = self.dict_atomic_mass(self.atoms[i])
 
     
     def read_kpts(self):
@@ -193,3 +211,66 @@ class qe_in(object):
                     self.division[j] = re.findall(
                         r"[+-]?\d+\.\d*|[+-]?\d+", self.lines[i+2+j]
                     )[3]
+
+    def dict_atomic_mass(self, element=None):
+        """
+        ++----------------------------------------------------------------------
+        +   This method provides a dictionary of atomic mass for the qe input
+        +   so that atomic mass is correct even though it is specified as 0
+        ++----------------------------------------------------------------------
+        """
+        dict_atomic_mass = {
+            "H": 1.008, "He": 4.003, "Li": 6.94, "Be": 6.9012,
+            "B": 10.81, "C": 12.011, "N": 14.007, "O": 15.999,
+            "F": 18.998, "Ne": 20.180, "Na": 22.990, "Mg": 24.305,
+            "Al": 26.982, "Si": 28.085, "P": 30.974, "S": 32.06,
+            "Cl": 35.45, "Ar": 39.95, "K": 39.098, "Ca": 40.078,
+            "Sc": 44.956, "Ti": 47.867, "V": 50.942, "Cr": 51.996,
+            "Mn": 54.938, "Fe": 55.845, "Co": 58.993, "Ni": 58.693,
+            "Cu": 63.546, "Zn": 65.38, "Ga": 69.723, "Ge": 72.630,
+            "As": 74.9922, "Se": 78.971, "Br": 79.904, "Kr": 83.798,
+            "Rb": 85.468, "Sr": 87.62, "Y": 88.906, "Zr": 91.224,
+            "Nb": 101.07, "Mo": 95.95, "Tc": 97, "Ru": 101.91,
+            "Rh": 102.91, "Pd": 106.42, "Ag": 107.87, "Cd": 112.41,
+            "In": 114.82, "Sn": 118.71, "Sb": 121.76, "Te": 127.60,
+            "I": 126.90, "Xe": 131.29, "Cs": 132.91, "Ba": 137.33,
+            "La": 138.91, "Ce": 140.12, "Pr": 140.91, "Nd": 144.24,
+            "Pm": 145, "Sm": 150.36, "Eu": 151.96, "Gd": 157.25,
+            "Tb": 158.93, "Dy": 162.50, "Ho": 164.93, "Er": 167.26,
+            "Tm": 168.93, "Yb": 173.05, "Lu": 174.97, "Hf": 178.49,
+            "Ta": 180.95, "W": 183.84, "Re": 186.21, "Os": 190.23,
+            "Ir": 192.22, "Pt": 195.08, "Au": 196.97, "Hg": 200.59,
+            "Tl": 204.38, "Pb": 207.2, "Bi": 208.98, "Po": 209,
+            "At": 210, "Rn": 222
+        }
+        mass = dict_atomic_mass.get(element)
+        return mass
+
+
+if __name__ == "__main__":
+    cwd = os.getcwd()
+    qe = qe_in(cwd)
+
+    if "convap" in sys.argv:
+        dir_f = str(cwd) + "/cnv.txt"
+        atoms_atomic_pos = np.column_stack((qe.atoms, qe.atomic_pos))
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("convert cart_coord to cryst_coord\n")
+        output_file.write("CELL_PARAMETERS angstrom\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("ATOMIC_POSITIONS crystal\n")
+        np.savetxt(output_file, atoms_atomic_pos, "%s")
+        output_file.close()
+    
+    if "convcy" in sys.argv:
+        dir_f = str(cwd) + "/cnv.txt"
+        atoms_ap_pos = np.column_stack((qe.atoms, qe.ap_cart_coord))
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("convert cryst_coord to cart_coord\n")
+        output_file.write("CELL_PARAMETERS angstrom\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("ATOMIC_POSITIONS angstrom\n")
+        np.savetxt(output_file, atoms_ap_pos, "%s")
+        output_file.close()
