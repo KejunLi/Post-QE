@@ -3,6 +3,8 @@ import numpy as np
 import sys
 import os
 from scipy.optimize import curve_fit
+from read_qeout import qe_out
+from read_qein import qe_in
 
 class strain_and_deform_cell(object):
     """
@@ -45,8 +47,34 @@ class strain_and_deform_cell(object):
 
         # call dynamic methods
         self._ap_cart_coord = np.matmul(atomic_pos, self._cryst_axes)
+        self.rotate()
     
+    def rotate(self, theta=0):
+        """
+        =-----------------------------------------------------------------------
+        +   Let atomic positions in fractional crystal coordinates be A, 
+        +   crystal axes be C, rotational matrix be R.
+        +
+        +   The atomic positions in angstrom A_1 = AC.
+        +   By rotation, (A_2)^T = R(A_1)^T = R(C^T)(A^T)
+        +   Therefore, new crystal axes after rotation is CR^T, and the atomic
+        +   positions are the same as they are.
+        +   Here the rotation is only allowed in perpendicular to 2D plane.
+        =-----------------------------------------------------------------------
+        """
+        theta = theta / 180.0 * np.pi # convert to radian from degree
+        rotation_mat = np.matrix(
+            [
+                [np.cos(theta), -np.sin(theta), 0], 
+                [np.sin(theta), np.cos(theta), 0],
+                [0, 0, 1]
+            ]
+        )
+        self.cryst_axes = np.matmul(
+            self._cryst_axes, np.transpose(rotation_mat)
+        )
 
+    
     def homogeneous_strain(self, strain=0):
         """
         =-----------------------------------------------------------------------
@@ -189,32 +217,49 @@ class strain_and_deform_cell(object):
         self.atomic_pos = np.matmul(ap_cart_coord, self._inv_cryst_axes)
         return(self.atomic_pos)
 
-    def parameterize_plane(
-        self, xy: np.ndarray, 
-        amp: float, std: float, peak: tuple,
-        a: float, b: float
-    ):
-        z = (
-            amp 
-            * exp(-0.5 * (a*(xy - peak)[:, 0] + b*(xy-peak)[:, 1])**2 / std**2)
-        )
-        return z
+    # def parameterize_plane(
+    #     self, xy: np.ndarray, 
+    #     amp: float, std: float, peak: tuple,
+    #     a: float, b: float
+    # ):
+    #     z = (
+    #         amp 
+    #         * exp(-0.5 * (a*(xy - peak)[:, 0] + b*(xy-peak)[:, 1])**2 / std**2)
+    #     )
+    #     return z
     
-    def best_vals_of_parameters(self, xy: np.ndarray, z:np.ndarray):
-        init_vals = [1.0, 1.0, [1.0, 1.0], 1.0, 1.0]
-        best_vals, covar = curve_fit(parameterize_plane, xy, z, p0=init_vals)
-        print(
-            "\rbest_vals: amp={}, std={}, peak={}, a={}, b={}\n"
-            .format(
-                best_vals[0], best_vals[1], best_vals[2], best_vals[3],
-                best_vals[4]
-            )
-        )
-        return best_vals
+    # def best_vals_of_parameters(self, xy: np.ndarray, z:np.ndarray):
+    #     init_vals = [1.0, 1.0, [1.0, 1.0], 1.0, 1.0]
+    #     best_vals, covar = curve_fit(parameterize_plane, xy, z, p0=init_vals)
+    #     print(
+    #         "\rbest_vals: amp={}, std={}, peak={}, a={}, b={}\n"
+    #         .format(
+    #             best_vals[0], best_vals[1], best_vals[2], best_vals[3],
+    #             best_vals[4]
+    #         )
+    #     )
+    #     return best_vals
 
     # def actual_curvature(self, )
     
 
+if __name__ == "__main__":
+    cwd = os.getcwd()
+    if sys.argv[1].endswith("out"):
+        qe = qe_out(os.path.join(cwd, sys.argv[1]), show_details=False)
+        sdc = strain_and_deform_cell(
+            cryst_axes=qe.cryst_axes, atomic_pos=qe.atomic_pos
+        )
+        sdc.rotate(theta=float(sys.argv[2]))
+        cellpara = sdc.cryst_axes
+    elif sys.argv[1].endswith("in"):
+        qe = qe_in(os.path.join(cwd, sys.argv[1]))
+        sdc = strain_and_deform_cell(
+            cryst_axes=qe.cryst_axes, atomic_pos=qe.atomic_pos
+        )
+        sdc.rotate(theta=float(sys.argv[2]))
+        cellpara = sdc.cryst_axes
+    print(cellpara)
 
     
 
