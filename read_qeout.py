@@ -40,7 +40,7 @@ class qe_out(object):
     ++--------------------------------------------------------------------------
     +   2. Method read_etot(self)
     +
-    +   self.etot (total energy at each ionic step)
+    +   self.etot (total energy at each ionic step, eV)
     +   self.etot[-1] is the final total energy
     +   
     +   No return
@@ -85,14 +85,14 @@ class qe_out(object):
     +   self.atoms (atomic species associated with each atomic position)
     +   self.atomic_pos (atomic positions in fractional crystal coordinates)
     +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
-    +   self.atomic_mass (atomic mass associated with each atom)
+    +   self.atomic_mass (atomic mass associated with each atom, AMU)
     +
     +   No return
     ++--------------------------------------------------------------------------
     +   9. Method read_miscellus(self)
     +   Attributes:
-    +   self.cpu_time (the time during which the processor is actively working)
-    +   self.wall_time (elapsed real time)
+    +   self.cpu_time (time during which the processor is actively working, s)
+    +   self.wall_time (elapsed real time, s)
     +   self.fft (fast Fourier transform)
     +   self.dense_grid
     +
@@ -250,7 +250,7 @@ class qe_out(object):
         # call all the dynamic methods
         self.read_etot()
         self.read_atomic_pos()
-        self.read_miscellus()
+        #self.read_miscellus()
         self.read_eigenenergies()
         #self.read_bandgap()
 
