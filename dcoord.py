@@ -2,10 +2,7 @@
 import numpy as np
 import sys
 import os
-sys.path.insert(0, "/home/lkj/work/github/qe_post_processing")
-sys.path.insert(0, "/home/lkj/work/github//write")
 from read_qeout import qe_out
-from write_xsf import write_force_xsf
 
 # calculate the atomic positions displacement between two states after relax
 
