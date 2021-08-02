@@ -20,8 +20,8 @@ class read_xsf_xyz(object):
     +   self.nat (number of atoms)
     +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
     +   self.atoms (atomic species associated with each atomic position)
-    +   self.atomic_pos (atomic positions in fractional crystal coordinates)
-    +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
+    +   self.atomic_pos_cryst (atomic positions in fractional crystal coordinates)
+    +   self.atomic_pos_cart (atomic positions in cartesian coordinates, angstrom)
     +   
     +   No return
     ++--------------------------------------------------------------------------
@@ -29,7 +29,7 @@ class read_xsf_xyz(object):
     +
     +   self.nat (number of atoms)
     +   self.atoms (atomic species associated with each atomic position)
-    +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
+    +   self.atomic_pos_cart (atomic positions in cartesian coordinates, angstrom)
     +   
     +   No return
     ++--------------------------------------------------------------------------
@@ -83,8 +83,8 @@ class read_xsf_xyz(object):
         
         # initialize array for saving data
         self.atoms = np.zeros(self.nat, dtype="U4")
-        self.atomic_pos = np.zeros((self.nat, 3))
-        self.ap_cart_coord = np.zeros((self.nat, 3))
+        self.atomic_pos_cryst = np.zeros((self.nat, 3))
+        self.atomic_pos_cart = np.zeros((self.nat, 3))
 
         # the array for the vector values next to the atomic positions in xsf file
         self.vec_val = np.zeros((self.nat, 3))
@@ -93,7 +93,7 @@ class read_xsf_xyz(object):
             if "PRIMCOORD" in line:
                 for j in range(self.nat):
                     self.atoms[j] = self.lines[i+2+j].strip().split()[0]
-                    self.ap_cart_coord[j] = (
+                    self.atomic_pos_cart[j] = (
                         self.lines[i+2+j].strip().split()[1:4]
                     )
                     num_elements = len(self.lines[i+2+j].strip().split())
@@ -104,17 +104,17 @@ class read_xsf_xyz(object):
         
         inv_cryst_axes = np.linalg.inv(self.cryst_axes)
 
-        self.atomic_pos = np.matmul(self.ap_cart_coord, inv_cryst_axes)
+        self.atomic_pos_cryst = np.matmul(self.atomic_pos_cart, inv_cryst_axes)
 
     def read_xyz(self):
         self.nat = int(re.findall(r"[+-]?\d+", self.lines[0])[0])
     
         self.atoms = np.zeros(self.nat, dtype="U4")
-        self.ap_cart_coord = np.zeros((self.nat, 3))
+        self.atomic_pos_cart = np.zeros((self.nat, 3))
 
         for i in range(self.nat):
             self.atoms[i] = self.lines[i+2].strip().split()[0]
-            self.ap_cart_coord[i] = (self.lines[i+2].strip().split()[1:4])
+            self.atomic_pos_cart[i] = (self.lines[i+2].strip().split()[1:4])
 
 
 if __name__ == "__main__":

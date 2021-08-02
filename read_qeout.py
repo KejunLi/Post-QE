@@ -83,8 +83,8 @@ class qe_out(object):
     +   Attributes:
     +   self.atomsfull (full atomic name associated with each atomic position)
     +   self.atoms (atomic species associated with each atomic position)
-    +   self.atomic_pos (atomic positions in fractional crystal coordinates)
-    +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
+    +   self.atomic_pos_cryst (atomic positions in fractional crystal coordinates)
+    +   self.atomic_pos_cart (atomic positions in cartesian coordinates, angstrom)
     +   self.atomic_mass (atomic mass associated with each atom, AMU)
     +
     +   No return
@@ -699,8 +699,8 @@ class qe_out(object):
         """
         self.atomsfull = np.zeros(self.nat, dtype="U4")
         self.atoms = np.zeros(self.nat, dtype="U4")
-        self.atomic_pos = np.zeros((self.nat, 3))
-        self.ap_cart_coord = np.zeros((self.nat, 3))
+        self.atomic_pos_cryst = np.zeros((self.nat, 3))
+        self.atomic_pos_cart = np.zeros((self.nat, 3))
         self.atomic_mass = np.zeros(self.nat)
         is_geometry_optimized = False
 
@@ -710,25 +710,27 @@ class qe_out(object):
                     self.atomsfull[j] = self.lines[i+3+j].strip().split()[1]
                     # substitute any digit in self.atomsfull with nothing
                     self.atoms[j] = re.sub(r"[^a-zA-Z]", "", self.atomsfull[j])
-                    self.ap_cart_coord[j] = (
+                    self.atomic_pos_cart[j] = (
                         self.lines[i+3+j].strip().split()[6:9]
                     )
-                self.ap_cart_coord *= self.celldm1
+                self.atomic_pos_cart *= self.celldm1
                 # The following converts the fractional crystal coordinates
                 # to cartesian coordinates in angstrom
-                self.atomic_pos = np.matmul(
-                        self.ap_cart_coord, self.inv_cryst_axes
+                self.atomic_pos_cryst = np.matmul(
+                        self.atomic_pos_cart, self.inv_cryst_axes
                     )
             if "Crystallographic axes" in line:
                 for j in range(self.nat):
                     self.atomsfull[j] = self.lines[i+3+j].strip().split()[1]
                     # substitute any digit in self.atomsfull with nothing
                     self.atoms[j] = re.sub(r"[^a-zA-Z]", "", self.atomsfull[j])
-                    self.atomic_pos[j] = self.lines[i+3+j].strip().split()[6:9]
+                    self.atomic_pos_cryst[j] = (
+                        self.lines[i+3+j].strip().split()[6:9]
+                    )
                 # The following converts the fractional crystal coordinates
                 # to cartesian coordinates in angstrom
-                self.ap_cart_coord = np.matmul(
-                        self.atomic_pos, self.cryst_axes
+                self.atomic_pos_cart = np.matmul(
+                        self.atomic_pos_cryst, self.cryst_axes
                     )
             if "End of BFGS Geometry Optimization" in line:
                 is_geometry_optimized = True
@@ -737,26 +739,26 @@ class qe_out(object):
                         self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
                         # substitute any digit in self.atomsfull with nothing
                         self.atoms[j] = re.sub(r"D+", "", self.atomsfull[j])
-                        self.atomic_pos[j] = (
+                        self.atomic_pos_cryst[j] = (
                             self.lines[i+6+j].strip().split()[1:4]
                         )
                     # The following converts the fractional crystal coordinates
                     # to cartesian coordinates in angstrom
-                    self.ap_cart_coord = np.matmul(
-                        self.atomic_pos, self.cryst_axes
+                    self.atomic_pos_cart = np.matmul(
+                        self.atomic_pos_cryst, self.cryst_axes
                     )
                 elif "angstrom" in self.lines[i+5]: # cartisian coordinate
                     for j in range(self.nat):
                         self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
                         # substitute any digit in self.atomsfull with nothing
                         self.atoms[j] = re.sub(r"D+", "", self.atomsfull[j])
-                        self.ap_cart_coord[j] = (
+                        self.atomic_pos_cart[j] = (
                             self.lines[i+6+j].strip().split()[1:4]
                         )
                     # The following converts the cartesian coordinates in 
                     # angstrom to fractional crystal coordinates
-                    self.atomic_pos = np.matmul(
-                        self.ap_cart_coord, self.inv_cryst_axes
+                    self.atomic_pos_cryst = np.matmul(
+                        self.atomic_pos_cart, self.inv_cryst_axes
                     )
 
         if not is_geometry_optimized:
@@ -1235,9 +1237,11 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     qe = qe_out(cwd, show_details=True)
 
-    if "convap" in sys.argv:
+    if "cart2cryst" in sys.argv:
         dir_f = str(cwd) + "/cnv.txt"
-        atoms_atomic_pos = np.column_stack((qe.atoms, qe.atomic_pos))
+        atoms_atomic_pos = np.column_stack(
+            (qe.atoms, qe.atomic_pos_cryst)
+        )
         output_file = open(dir_f, "w")
         output_file = open(dir_f, "a")
         output_file.write("convert cart_coord to cryst_coord\n")
@@ -1247,9 +1251,9 @@ if __name__ == "__main__":
         np.savetxt(output_file, atoms_atomic_pos, "%s")
         output_file.close()
     
-    if "convcy" in sys.argv:
+    if "cryst2cart" in sys.argv:
         dir_f = str(cwd) + "/cnv.txt"
-        atoms_ap_pos = np.column_stack((qe.atoms, qe.ap_cart_coord))
+        atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
         output_file = open(dir_f, "w")
         output_file = open(dir_f, "a")
         output_file.write("convert cryst_coord to cart_coord\n")
@@ -1266,10 +1270,10 @@ if __name__ == "__main__":
         # show magnetic moment (scalar) in z-axis
         magnetic_moment = np.column_stack((x, y, qe.magnet))
         dir_f = str(cwd) + "/magnet.xsf"
-        ap_cart_coord_magnet = np.column_stack(
-            (qe.ap_cart_coord, magnetic_moment)
+        atomic_pos_cart_magnet = np.column_stack(
+            (qe.atomic_pos_cart, magnetic_moment)
         )
-        inp = np.column_stack((qe.atoms, ap_cart_coord_magnet))
+        inp = np.column_stack((qe.atoms, atomic_pos_cart_magnet))
         output_file = open(dir_f, "w")
         output_file = open(dir_f, "a")
         output_file.write("CRYSTAL\n")

@@ -31,8 +31,8 @@ class qe_in(object):
     ++--------------------------------------------------------------------------
     +   3. Method read_atomic_pos(self)
     +   self.atoms (atomic name associated with each atomic position)
-    +   self.atomic_pos (atomic positions in fractional crystal coordinates)
-    +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
+    +   self.atomic_pos_cryst (atomic positions in fractional crystal coordinates)
+    +   self.atomic_pos_cart (atomic positions in cartesian coordinates, angstrom)
     +
     +   No return
     ++--------------------------------------------------------------------------
@@ -162,29 +162,33 @@ class qe_in(object):
         ++----------------------------------------------------------------------
         """
         self.atoms = np.zeros(self.nat, dtype="U4")
-        self.atomic_pos = np.zeros((self.nat, 3))
-        self.ap_cart_coord = np.zeros((self.nat, 3))
+        self.atomic_pos_cryst = np.zeros((self.nat, 3))
+        self.atomic_pos_cart = np.zeros((self.nat, 3))
         is_cryst_coord = True
         
         for i, line in enumerate(self.lines):
             if "ATOMIC_POSITIONS" in line and "crystal" in line:
                 for j in range(self.nat):
                     self.atoms[j] = self.lines[i+1+j].strip().split()[0]
-                    self.atomic_pos[j, :] = re.findall(
+                    self.atomic_pos_cryst[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+1+j]
                     )
             elif "ATOMIC_POSITIONS" in line and "angstrom" in line:
                 is_cryst_coord = False
                 for j in range(self.nat):
                     self.atoms[j] = self.lines[i+1+j].strip().split()[0]
-                    self.ap_cart_coord[j, :] = re.findall(
+                    self.atomic_pos_cart[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+1+j]
                     )
         if is_cryst_coord:
-            self.ap_cart_coord = np.matmul(self.atomic_pos, self.cryst_axes)
+            self.atomic_pos_cart = np.matmul(
+                self.atomic_pos_cryst, self.cryst_axes
+            )
         else:
             inv_cryst_axes = np.linalg.inv(self.cryst_axes)
-            self.atomic_pos = np.matmul(self.ap_cart_coord, inv_cryst_axes)
+            self.atomic_pos_cryst = np.matmul(
+                self.atomic_pos_cart, inv_cryst_axes
+            )
 
         self.atomic_mass = np.zeros(self.nat)
         for i in range(self.nat):
@@ -251,7 +255,7 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     qe = qe_in(cwd)
 
-    if "convap" in sys.argv:
+    if "cart2cryst" in sys.argv:
         dir_f = str(cwd) + "/cnv.txt"
         atoms_atomic_pos = np.column_stack((qe.atoms, qe.atomic_pos))
         output_file = open(dir_f, "w")
@@ -263,9 +267,9 @@ if __name__ == "__main__":
         np.savetxt(output_file, atoms_atomic_pos, "%s")
         output_file.close()
     
-    if "convcy" in sys.argv:
+    if "cryst2cart" in sys.argv:
         dir_f = str(cwd) + "/cnv.txt"
-        atoms_ap_pos = np.column_stack((qe.atoms, qe.ap_cart_coord))
+        atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
         output_file = open(dir_f, "w")
         output_file = open(dir_f, "a")
         output_file.write("convert cryst_coord to cart_coord\n")

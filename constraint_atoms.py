@@ -13,14 +13,14 @@ class cstr_atoms(object):
     +   Input:
     +   atoms (atomic species) 
     +   cryst_axes (crystal axes) 
-    +   atomic_pos (atomic positions)
+    +   atomic_pos_cryst (atomic positions)
     +
     +   Attributes:
     +   self.atoms (atomic species associated with each atomic position)
     +   self.nat (number of atoms)
     +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
-    +   self.atomic_pos (atomic positions in fractional crystal coordinates)
-    +   self.ap_cart_coord (atomic positions in cartesian coordinates, angstrom)
+    +   self.atomic_pos_cryst (atomic positions in fractional crystal coordinates)
+    +   self.atomic_pos_cart (atomic positions in cartesian coordinates, angstrom)
     +   self.atomic_mass (atomic mass associated with each atom)
     +
     +   No return
@@ -34,13 +34,13 @@ class cstr_atoms(object):
     +   self.cubes_mass (corresponding atomic mass in cubes)
     +   self.cubes_atoms (atomic species in cubes)
     +
-    +   return(all_ap_cart_coord, all_mass)
+    +   return(all_atomic_pos_cart, all_mass)
     ++--------------------------------------------------------------------------
     +   3. Method multi_images(self, mul)
     +   Input: repetition times of the original supercell in each of x, y and z 
     +
     +   Attributes:
-    +   self.images_ap_cart_coord (atomic positions in cartesian coordinates of
+    +   self.images_atomic_pos_cart (atomic positions in cartesian coordinates of
     +   all periodic images)
     +   self.images_mass (corresponding atomic mass in all images)
     +
@@ -64,20 +64,20 @@ class cstr_atoms(object):
     +   self.if_pos (an array that whill be used to multiply with forces in a 
     +   Quantum Espresso relax calculation, if if_pos[i] == [0, 0, 0], the force
     +   that act on atom i will be set to zero)
-    +   self.atomic_pos_if_pos (an array that is created by concatenating the
-    +   arraies of self.atomic_pos and self.if_pos side by side)
-    +   self.atoms_atomic_pos_if_pos (an array that is created by columb stack 
-    +   the arraies of self.atoms and self.atomic_pos_if_pos)
+    +   self.atomic_pos_cryst_if_pos (an array that is created by concatenating the
+    +   arraies of self.atomic_pos_cryst and self.if_pos side by side)
+    +   self.atoms_atomic_pos_cryst_if_pos (an array that is created by columb stack 
+    +   the arraies of self.atoms and self.atomic_pos_cryst_if_pos)
     +
     +   No return
     ++--------------------------------------------------------------------------
     """
-    def __init__(self, atoms=None, cryst_axes=None, atomic_pos=None):
+    def __init__(self, atoms=None, cryst_axes=None, atomic_pos_cryst=None):
         self.atoms = atoms
         self.cryst_axes = cryst_axes
-        self.atomic_pos = atomic_pos
-        self.ap_cart_coord = np.matmul(atomic_pos, cryst_axes)
-        self.nat = atomic_pos.shape[0]
+        self.atomic_pos_cryst = atomic_pos_cryst
+        self.atomic_pos_cart = np.matmul(atomic_pos_cryst, cryst_axes)
+        self.nat = atomic_pos_cryst.shape[0]
 
         atp = atoms_properties()
         self.atomic_mass = np.zeros(self.nat)
@@ -128,9 +128,9 @@ class cstr_atoms(object):
         c = np.matmul([0, 0, 1], self.cryst_axes)
 
         # meanings of array indices in order:
-        # block position: i, j, k; atom_i; atomic_pos: x, y, z
+        # block position: i, j, k; atom_i; atomic_pos_cryst: x, y, z
         self.cubes = np.zeros((3, 3, 3, self.nat, 3))
-        self.cubes_atomic_pos = np.zeros((3, 3, 3, self.nat, 3))
+        self.cubes_atomic_pos_cryst = np.zeros((3, 3, 3, self.nat, 3))
         self.cubes_mass = np.zeros((3, 3, 3, self.nat))
         self.cubes_atoms = np.zeros((3, 3, 3, self.nat), dtype="U4")
 
@@ -143,20 +143,22 @@ class cstr_atoms(object):
             for j, yval in enumerate(y):
                 for k, zval in enumerate(z):
                     self.cubes[i, j, k, :, :] = (
-                        self.ap_cart_coord + a * xval + b * yval + c * zval
+                        self.atomic_pos_cart + a * xval + b * yval + c * zval
                     )
-                    self.cubes_atomic_pos[i, j, k, :, :] = np.matmul(
+                    self.cubes_atomic_pos_cryst[i, j, k, :, :] = np.matmul(
                         self.cubes[i, j, k, :, :], inv_cryst_axes
                     )
                     self.cubes_mass[i, j, k, :] = self.atomic_mass
                     self.cubes_atoms[i, j, k, :] = self.atoms
         
         # reshape the array to be 2D to make it convenient to plot
-        all_ap_cart_coord = self.cubes.reshape(27*self.nat, 3)
-        all_atomic_pos = self.cubes_atomic_pos.reshape(27*self.nat, 3)
+        all_atomic_pos_cart = self.cubes.reshape(27*self.nat, 3)
+        all_atomic_pos_cryst = self.cubes_atomic_pos_cryst.reshape(
+            27*self.nat, 3
+        )
         all_mass = self.cubes_mass.reshape(27*self.nat)
         all_atoms = self.cubes_atoms.reshape(27*self.nat)
-        return(all_atoms, all_atomic_pos, all_ap_cart_coord, all_mass)
+        return(all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart, all_mass)
 
     def multi_images(self, mul=2):
         """
@@ -168,15 +170,15 @@ class cstr_atoms(object):
         a = np.matmul([1, 0, 0], self.cryst_axes)
         b = np.matmul([0, 1, 0], self.cryst_axes)
         c = np.matmul([0, 0, 1], self.cryst_axes)
-        self.images_ap_cart_coord = np.zeros((mul**3*self.nat, 3))
+        self.images_atomic_pos_cart = np.zeros((mul**3*self.nat, 3))
         self.images_mass = np.zeros(mul**3*self.nat)
         for i in range(mul):
             for j in range(mul):
                 for k in range(mul):
                     line_num = mul**2 * i + mul * j + k
-                    self.images_ap_cart_coord[
+                    self.images_atomic_pos_cart[
                         line_num * self.nat:(line_num + 1) * self.nat, :
-                    ] = self.ap_cart_coord + i * a + j * b + k * c
+                    ] = self.atomic_pos_cart + i * a + j * b + k * c
                     self.images_mass[
                         line_num * self.nat:(line_num + 1) * self.nat
                     ] = self.atomic_mass
@@ -240,11 +242,11 @@ class cstr_atoms(object):
                 # constain atoms and decrease the weight of constraint atoms
                 self.atomic_mass[i] /=2
                 self.if_pos[i, :] = zero_force
-        self.atomic_pos_if_pos = np.concatenate(
-            (self.atomic_pos, self.if_pos), axis=1
+        self.atomic_pos_cryst_if_pos = np.concatenate(
+            (self.atomic_pos_cryst, self.if_pos), axis=1
         )
-        self.atoms_atomic_pos_if_pos = np.column_stack(
-            (self.atoms, self.atomic_pos_if_pos)
+        self.atoms_atomic_pos_cryst_if_pos = np.column_stack(
+            (self.atoms, self.atomic_pos_cryst_if_pos)
         )
 
 

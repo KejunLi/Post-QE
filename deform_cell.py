@@ -12,7 +12,7 @@ class strain_and_deform_cell(object):
     +   1. Constructor
     +   Input:
     +   cryst_axes (crystal axes)
-    +   atomic_pos (atomic positions)
+    +   atomic_pos_cryst (atomic positions)
     =---------------------------------------------------------------------------
     +   2. Method unaxial_strain(self, strain, theta)
     +   Input:
@@ -34,19 +34,19 @@ class strain_and_deform_cell(object):
     +
     +   Attributes: none
     +
-    +   return(ap_cart_coord)
+    +   return(atomic_pos_cart)
     =---------------------------------------------------------------------------
     """
-    def __init__(self, cryst_axes=None, atomic_pos=None):
+    def __init__(self, cryst_axes=None, atomic_pos_cryst=None):
         self._cryst_axes = cryst_axes
         self.cryst_axes = cryst_axes
         self._inv_cryst_axes = np.linalg.inv(self._cryst_axes)
-        self._atomic_pos = atomic_pos
-        self.atomic_pos = atomic_pos
-        self.nat = atomic_pos.shape[0]
+        self._atomic_pos_cryst = atomic_pos_cryst
+        self.atomic_pos_cryst = atomic_pos_cryst
+        self.nat = atomic_pos_cryst.shape[0]
 
         # call dynamic methods
-        self._ap_cart_coord = np.matmul(atomic_pos, self._cryst_axes)
+        self._atomic_pos_cart = np.matmul(atomic_pos_cryst, self._cryst_axes)
         self.rotate()
     
     def rotate(self, alpha=0, beta=0, gamma=0):
@@ -218,14 +218,16 @@ class strain_and_deform_cell(object):
             ]
         )
         inv_rotation_mat = np.linalg.inv(rotation_mat)
-        ap_cart_coord = self._ap_cart_coord
-        ap_cart_coord = np.matmul(ap_cart_coord, np.transpose(rotation_mat))
-        ap_cart_coord[:, 2] += self.gaussian(
-            amp, std, peak[1], ap_cart_coord[:, 1]
+        atomic_pos_cart = self._atomic_pos_cart
+        atomic_pos_cart = np.matmul(atomic_pos_cart, np.transpose(rotation_mat))
+        atomic_pos_cart[:, 2] += self.gaussian(
+            amp, std, peak[1], atomic_pos_cart[:, 1]
         )
-        ap_cart_coord = np.matmul(ap_cart_coord, np.transpose(inv_rotation_mat))
-        self.atomic_pos = np.matmul(ap_cart_coord, self._inv_cryst_axes)
-        return self.atomic_pos
+        atomic_pos_cart = np.matmul(
+            atomic_pos_cart, np.transpose(inv_rotation_mat)
+        )
+        self.atomic_pos_cryst = np.matmul(atomic_pos_cart, self._inv_cryst_axes)
+        return self.atomic_pos_cryst
     
     def gaussian_bump(self, amp=1.0, std=1.0, peak=[0, 0]):
         """
@@ -235,14 +237,14 @@ class strain_and_deform_cell(object):
         +   z += gaussian(amp, std, peak_y, y)
         =-----------------------------------------------------------------------
         """
-        ap_cart_coord = self._ap_cart_coord
-        ap_cart_coord[:, 2] += (
-            self.gaussian(amp, std, peak[0], ap_cart_coord[:, 0]) 
-            * self.gaussian(amp, std, peak[1], ap_cart_coord[:, 1])
+        atomic_pos_cart = self._atomic_pos_cart
+        atomic_pos_cart[:, 2] += (
+            self.gaussian(amp, std, peak[0], atomic_pos_cart[:, 0]) 
+            * self.gaussian(amp, std, peak[1], atomic_pos_cart[:, 1])
             / amp
         )
-        self.atomic_pos = np.matmul(ap_cart_coord, self._inv_cryst_axes)
-        return(self.atomic_pos)
+        self.atomic_pos_cryst = np.matmul(atomic_pos_cart, self._inv_cryst_axes)
+        return(self.atomic_pos_cryst)
 
     # def parameterize_plane(
     #     self, xy: np.ndarray, 
@@ -275,14 +277,14 @@ if __name__ == "__main__":
     if sys.argv[1].endswith("out"):
         qe = qe_out(os.path.join(cwd, sys.argv[1]), show_details=False)
         sdc = strain_and_deform_cell(
-            cryst_axes=qe.cryst_axes, atomic_pos=qe.atomic_pos
+            cryst_axes=qe.cryst_axes, atomic_pos_cryst=qe.atomic_pos_cryst
         )
         sdc.rotate(theta=float(sys.argv[2]))
         cellpara = sdc.cryst_axes
     elif sys.argv[1].endswith("in"):
         qe = qe_in(os.path.join(cwd, sys.argv[1]))
         sdc = strain_and_deform_cell(
-            cryst_axes=qe.cryst_axes, atomic_pos=qe.atomic_pos
+            cryst_axes=qe.cryst_axes, atomic_pos_cryst=qe.atomic_pos_cryst
         )
         sdc.rotate(theta=float(sys.argv[2]))
         cellpara = sdc.cryst_axes
