@@ -49,7 +49,7 @@ class strain_and_deform_cell(object):
         self._ap_cart_coord = np.matmul(atomic_pos, self._cryst_axes)
         self.rotate()
     
-    def rotate(self, theta=0):
+    def rotate(self, alpha=0, beta=0, gamma=0):
         """
         =-----------------------------------------------------------------------
         +   Let atomic positions in fractional crystal coordinates be A, 
@@ -58,18 +58,45 @@ class strain_and_deform_cell(object):
         +   The atomic positions in angstrom A_1 = AC.
         +   By rotation, (A_2)^T = R(A_1)^T = R(C^T)(A^T)
         +   Therefore, new crystal axes after rotation is CR^T, and the atomic
-        +   positions are the same as they are.
+        +   positions in crystal axes are the same as they are.
         +   Here the rotation is only allowed in perpendicular to 2D plane.
+        +
+        +   Step 1. alpha: rotation along x axis
+        +   Step 2. beta: rotation along y axis
+        +   Step 3. gamma: rotation along z axis
         =-----------------------------------------------------------------------
         """
-        theta = theta / 180.0 * np.pi # convert to radian from degree
-        rotation_mat = np.matrix(
+        # convert to radian from degree
+        alpha = alpha / 180.0 * np.pi 
+        beta = beta / 180.0 * np.pi 
+        gamma = gamma / 180.0 * np.pi 
+        # rotation matrix along x
+        rot_x = np.matrix(
             [
-                [np.cos(theta), -np.sin(theta), 0], 
-                [np.sin(theta), np.cos(theta), 0],
+                [1, 0, 0], 
+                [0, np.cos(alpha), -np.sin(alpha)],
+                [0, np.sin(alpha), np.cos(alpha)]
+            ]
+        )
+        # rotation matrix along y
+        rot_y = np.matrix(
+            [
+                [np.cos(beta), 0, np.sin(beta)], 
+                [0, 1, 0],
+                [-np.sin(alpha), 0, np.cos(alpha)]
+            ]
+        )
+        # rotation matrix along z
+        rot_z = np.matrix(
+            [
+                [np.cos(gamma), -np.sin(gamma), 0], 
+                [np.sin(gamma), np.cos(gamma), 0],
                 [0, 0, 1]
             ]
         )
+        # first rotate along x, then y, finally z
+        rotation_mat = np.matmul(rot_z, np.matmul(rot_y, rot_x))
+
         self.cryst_axes = np.matmul(
             self._cryst_axes, np.transpose(rotation_mat)
         )
