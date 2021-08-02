@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 import scipy.constants as spc
-sys.path.insert(0, "/home/lkj/work/github/constants")
-from periodic_table import atoms_properties
+
 
 
 class qe_in(object):
@@ -249,6 +248,7 @@ class qe_in(object):
         }
         mass = dict_atomic_mass.get(element)
         return mass
+
 
 
 if __name__ == "__main__":
