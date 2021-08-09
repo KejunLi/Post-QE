@@ -118,5 +118,40 @@ class read_xsf_xyz(object):
 
 
 if __name__ == "__main__":
+    # visualize the atomic positions difference between two structures
     cwd = os.getcwd()
-    xsf_xyz = qe_out(cwd)
+
+    f_relax = []
+    nuclear_coord = []
+
+    for f in os.listdir(cwd):
+        if f.endswith(".xsf"):
+            input_f = read_xsf_xyz(os.path.join(cwd, f))
+            # if input_f_out exits, the code will stop here
+            f_relax.append(f)
+            nuclear_coord.append(input_f.atomic_pos_cart)
+
+    for i in range(len(f_relax)):
+        j = i
+        while j+1 < len(f_relax):
+            d_coord = nuclear_coord[i] - nuclear_coord[j+1]
+            # write dR with atomic positions into xsf file, compatible with VESTA
+            atomic_pos_cart_d_coord = np.concatenate(
+                (input_f.atomic_pos_cart, d_coord), axis=1
+            )
+            atoms_atomic_pos_cart_d_coord = np.column_stack(
+                (input_f.atoms, atomic_pos_cart_d_coord)
+            )
+            nat = input_f.atoms.shape[0]
+            print("dR is saved in ", "dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf")
+            outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf", "w")
+            outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf", "a")
+            outfile.write("CRYSTAL\n")
+            outfile.write("PRIMVEC\n")
+            np.savetxt(outfile, input_f.cryst_axes, "%.10f")
+            outfile.write("PRIMCOORD\n")
+            outfile.write(str(nat) + "  1\n")
+            np.savetxt(outfile, atoms_atomic_pos_cart_d_coord, "%s")
+            outfile.close()
+
+            j += 1
