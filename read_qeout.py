@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import os
 import re
-import scipy.constants as spc
+import argparse
 
 class qe_out(object):
     """
@@ -130,7 +130,10 @@ class qe_out(object):
         self.exist_occ = False
         self.scf_cycle = 0
         self.exx_scf_cycle = 0
-        Bohr2Ang = spc.physical_constants["Bohr radius"][0]/1e-10
+
+        # physical constants
+        Bohr = 5.29177210903e-11 # unit m
+        Bohr2Ang = Bohr/1e-10
 
         for i, line in enumerate(self.lines):
             if "number of atoms/cell" in line:
@@ -263,7 +266,10 @@ class qe_out(object):
         +   only works for PBE now
         ++----------------------------------------------------------------------
         """
-        Ry2eV = spc.physical_constants["Hartree energy in eV"][0]/2
+        # physical constants
+        Ry = 2.1798723611035e-18 # Rydberg in Joules
+        Ry2eV = 13.605693122994 # Rydberg constant in eV
+
         etot_count = 0
         exx_etot_count = 0
         self.etot = np.zeros(self.scf_cycle) # total energy without exx
@@ -841,9 +847,15 @@ def read_vac(dir_f=".avg.out"):
             vac.append(float(re.findall(r"[+-]?\d+\.\d*", line)[1]))
         elif found_vac and not line.strip():
             continue
+    
+    # physical constants
+    Bohr = 5.29177210903e-11 # unit m
+    Bohr2Ang = Bohr/1e-10
+    Ry = 2.1798723611035e-18 # Rydberg in Joules
+    Ry2eV = 13.605693122994 # Rydberg constant in eV
 
-    z = np.asarray(z) * spc.physical_constants["Bohr radius"][0]
-    vac = np.asarray(vac) * spc.physical_constants["Hartree energy in eV"][0]/2
+    z = np.asarray(z) * Bohr2Ang
+    vac = np.asarray(vac) * Ry2eV
     return(z, vac)
 
 #------------------------------------------------------------------------------#
@@ -1043,7 +1055,10 @@ class qe_bands(object):
         self.up_ne = 0
         self.dn_ne = 0
         self.soc = False
-        Bohr2Ang = spc.physical_constants["Bohr radius"][0]/1e-10
+
+        # physical constants
+        Bohr = 5.29177210903e-11 # unit m
+        Bohr2Ang = Bohr/1e-10
 
         for i, line in enumerate(self.lines):
             if "number of atoms/cell" in line:

@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import re
-import scipy.constants as spc
 
 
 
@@ -77,7 +75,10 @@ class qe_in(object):
 
     def read_cryst_axes(self):
         self.cryst_axes = np.zeros((3, 3))
-        Bohr2Ang = spc.physical_constants["Bohr radius"][0]/1e-10
+
+        # physical constants
+        Bohr = 5.29177210903e-11 # unit m
+        Bohr2Ang = Bohr/1e-10
 
         if self.ibrav == 0: # structure is free
             for i, line in enumerate(self.lines):
@@ -253,28 +254,64 @@ class qe_in(object):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    qe = qe_in(cwd)
+    # qe = qe_in(cwd)
 
-    if "cart2cryst" in sys.argv:
-        dir_f = str(cwd) + "/cnv.txt"
-        atoms_atomic_pos = np.column_stack((qe.atoms, qe.atomic_pos))
-        output_file = open(dir_f, "w")
-        output_file = open(dir_f, "a")
-        output_file.write("convert cart_coord to cryst_coord\n")
-        output_file.write("CELL_PARAMETERS angstrom\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
-        output_file.write("ATOMIC_POSITIONS crystal\n")
-        np.savetxt(output_file, atoms_atomic_pos, "%s")
-        output_file.close()
+    # if "cart2cryst" in sys.argv:
+    #     dir_f = str(cwd) + "/cnv.txt"
+    #     atoms_atomic_pos = np.column_stack((qe.atoms, qe.atomic_pos))
+    #     output_file = open(dir_f, "w")
+    #     output_file = open(dir_f, "a")
+    #     output_file.write("convert cart_coord to cryst_coord\n")
+    #     output_file.write("CELL_PARAMETERS angstrom\n")
+    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
+    #     output_file.write("ATOMIC_POSITIONS crystal\n")
+    #     np.savetxt(output_file, atoms_atomic_pos, "%s")
+    #     output_file.close()
     
-    if "cryst2cart" in sys.argv:
-        dir_f = str(cwd) + "/cnv.txt"
-        atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
-        output_file = open(dir_f, "w")
-        output_file = open(dir_f, "a")
-        output_file.write("convert cryst_coord to cart_coord\n")
-        output_file.write("CELL_PARAMETERS angstrom\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
-        output_file.write("ATOMIC_POSITIONS angstrom\n")
-        np.savetxt(output_file, atoms_ap_pos, "%s")
-        output_file.close()
+    # if "cryst2cart" in sys.argv:
+    #     dir_f = str(cwd) + "/cnv.txt"
+    #     atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
+    #     output_file = open(dir_f, "w")
+    #     output_file = open(dir_f, "a")
+    #     output_file.write("convert cryst_coord to cart_coord\n")
+    #     output_file.write("CELL_PARAMETERS angstrom\n")
+    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
+    #     output_file.write("ATOMIC_POSITIONS angstrom\n")
+    #     np.savetxt(output_file, atoms_ap_pos, "%s")
+    #     output_file.close()
+
+    # visualize the atomic positions difference between two structures
+    f_relax = []
+    nuclear_coord = []
+
+    for f in os.listdir(cwd):
+        if f.endswith(".in"):
+            input_f = qe_in(os.path.join(cwd, f))
+            # if input_f_out exits, the code will stop here
+            f_relax.append(f)
+            nuclear_coord.append(input_f.atomic_pos_cart)
+
+    for i in range(len(f_relax)):
+        j = i
+        while j+1 < len(f_relax):
+            d_coord = nuclear_coord[i] - nuclear_coord[j+1]
+            # write dR with atomic positions into xsf file, compatible with VESTA
+            atomic_pos_cart_d_coord = np.concatenate(
+                (input_f.atomic_pos_cart, d_coord), axis=1
+            )
+            atoms_atomic_pos_cart_d_coord = np.column_stack(
+                (input_f.atoms, atomic_pos_cart_d_coord)
+            )
+            nat = input_f.atoms.shape[0]
+            print("dR is saved in ", "dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf")
+            outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf", "w")
+            outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf", "a")
+            outfile.write("CRYSTAL\n")
+            outfile.write("PRIMVEC\n")
+            np.savetxt(outfile, input_f.cryst_axes, "%.10f")
+            outfile.write("PRIMCOORD\n")
+            outfile.write(str(nat) + "  1\n")
+            np.savetxt(outfile, atoms_atomic_pos_cart_d_coord, "%s")
+            outfile.close()
+
+            j += 1
