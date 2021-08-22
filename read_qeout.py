@@ -26,7 +26,7 @@ class qe_out(object):
     +   self.celldm1 (lattice parameter, angstrom)
     +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
     +   self.inv_cryst_axes (inverse crystal axes in cartesian coordinates, angstrom^-1)
-    +   self.R_axes (reciprocal axes in cartesian coordinates, 2*pi/alat)
+    +   self.R_axes (reciprocal axes in crystal coordinate)
     +   self.atomic_species (atomic species with mass)
     +   self.nk (number of k points)
     +   self.kpts_cart_coord (k points in cartesian coordinates)
