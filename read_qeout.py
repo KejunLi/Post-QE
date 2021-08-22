@@ -26,7 +26,7 @@ class qe_out(object):
     +   self.celldm1 (lattice parameter, angstrom)
     +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
     +   self.inv_cryst_axes (inverse crystal axes in cartesian coordinates, angstrom^-1)
-    +   self.R_axes (reciprocal axes in cartesian coordinates, angstrom^-1)
+    +   self.R_axes (reciprocal axes in cartesian coordinates, 2*pi/alat)
     +   self.atomic_species (atomic species with mass)
     +   self.nk (number of k points)
     +   self.kpts_cart_coord (k points in cartesian coordinates)
@@ -163,7 +163,7 @@ class qe_out(object):
             elif "celldm(1)" in line: # lattic constant
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
-                # convert bohr to angstron for celldm1
+                # read celldm1 and convert the unit from bohr to angstron
                 self.celldm1 = (
                     float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Bohr2Ang
                 )
