@@ -16,7 +16,7 @@ for f in os.listdir(cwd):
         # if qe_out exits, the code will stop here
         f_relax.append(f)
         etot.append(qe.final_energy)
-        coord.append(qe.ap_cart_coord)
+        coord.append(qe.atomic_pos_cart)
 
 
 for i in range(len(f_relax)):
