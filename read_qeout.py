@@ -263,7 +263,6 @@ class qe_out(object):
         +   This method reads qe output to find lines with total energy
         +   and extract data from lines.
         +   conditions can be "!", "!!" and "Final"
-        +   only works for PBE now
         ++----------------------------------------------------------------------
         """
         # physical constants
@@ -1248,53 +1247,245 @@ class qe_bands(object):
 #------------------------------------------------------------------------------#
 
 
+class read_pdos(object):
+    """
+    ++--------------------------------------------------------------------------
+    +   Input: path to Quantum Espresso pp.x output file
+    +   specifically, pdos.out.
+    ++--------------------------------------------------------------------------
+    +   1. Constructor
+    +   Attributes:
+    +   self.lines (lines in the file)
+    +   self.nat (number of atoms)
+    +   self.ntyp (number of atomic types)
+    +
+    +   No return
+    ++--------------------------------------------------------------------------
+    """
+    def __init__(self, path, show_details=True):
+        """
+        init method or constructor for initialization
+        read information in qe post processing output file pdos.out
+        """
+        is_pdos_out = False
+        if os.path.exists(path):
+            if path.endswith(".out"):
+                is_pdos_out = True
+                pdos_out = open(path, "r")
+            else:
+                pdos_out = open(os.path.join(path, sys.argv[1]), "r")
+                is_pdos_out = True
+        if not is_pdos_out:
+            raise IOError("Fail to open {}".format("pdos.out"))
+        
+        self.lines = pdos_out.readlines()
+        self.soc = False
+
+        # judge if SOC or not
+        for i, line in enumerate(self.lines):
+            if "state #" in line:
+                if "j" in re.findall("\(([^)]+)\)", line)[1]:
+                    self.soc = True
+                    break
+                else:
+                    break
+        
+        # call all the dynamic methods
+        self.read_atomic_states()
+        self.read_lowdin_charges()
+
+    def read_atomic_states(self):
+        """
+        ++----------------------------------------------------------------------
+        +   This method read the atomic states used for projection
+        +   all of the information is first saved in a list of dictionaries
+        +   the atoms are then saved in an array for convenience
+        ++----------------------------------------------------------------------
+        """
+        self.atomic_states = []
+
+        if self.soc:
+            for i, line in enumerate(self.lines):
+                if "state #" in line:
+                    self.atomic_states.append(
+                        {
+                            "state": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[0]
+                            ),
+                            "atom_num": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[1]
+                            ),
+                            "atomic_species": re.findall("\(([^)]+)\)", line)[0],
+                            "wfc": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[2]
+                            ),
+                            "l": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[3]
+                            ),
+                            "j": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[4]
+                            ),
+                            "m_j": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[5]
+                            )
+                        }
+                    )
+        else:
+            for i, line in enumerate(self.lines):
+                if "state #" in line:
+                    self.atomic_states.append(
+                        {
+                            "state": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[0]
+                            ),
+                            "atom_num": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[1]
+                            ),
+                            "atomic_species": re.findall("\(([^)]+)\)", line)[0],
+                            "wfc": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[2]
+                            ),
+                            "l": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[3]
+                            ),
+                            "m": float(
+                                re.findall("[+-]?\d+\.\d*|\d+", line)[4]
+                            )
+                        }
+                    )
+        # determine the number of atoms by the last value of atom_num in atomic states
+        self.nat = self.atomic_states[-1]["atom_num"]
+
+        self.atoms = []
+        # remove duplicate atomic number in the dictionary and save the atoms
+        # in an array
+        temp = []
+        temp_dict = dict()
+        for i, item in enumerate(self.atomic_states):
+            val = item["atom_num"]
+            if val not in temp:
+                temp.append(val)
+                self.atoms.append(item["atomic_species"])
+        self.atoms = np.asarray(self.atoms)
+
+    def read_lowdin_charges(self):
+        """
+        ++----------------------------------------------------------------------
+        +   This method read the Lowdin charges of all atoms without duplication
+        +   all of the information is first saved in a list of dictionaries
+        +   the lowdin charges are then saved in an array for convenience
+        ++----------------------------------------------------------------------
+        """
+        self.dict_lowdin_charges = []
+        self.lowdin_charges = []
+        temp_dict_lowdin_charges = []
+        for i, line in enumerate(self.lines):
+            if "total charge =" in line:
+                temp_dict_lowdin_charges.append(
+                    {
+                        "atom_num": float(
+                            re.findall("[+-]?\d+\.\d*|\d+", line)[0]
+                        ),
+                        "tot_charge": float(
+                            re.findall("[+-]?\d+\.\d*|\d+", line)[1]
+                        )
+                    }
+                )
+        
+        # remove duplicate value in the dictionary and save the lowdin charges
+        # in an array
+        temp = []
+        temp_dict = dict()
+        for i, item in enumerate(temp_dict_lowdin_charges):
+            val = item["atom_num"]
+            if val not in temp:
+                temp.append(val)
+                self.dict_lowdin_charges.append(item)
+                self.lowdin_charges.append(item["tot_charge"])
+        self.lowdin_charges = np.asarray(self.lowdin_charges)
+
+
+        # # Additionally read projection charge. Not used.
+        # if self.soc:
+        #     for i, line in enumerate(self.lines):
+        #         if "total charge =" in line:
+        #             self.atomic_states.append(
+        #                 {
+        #                     "atom_num": re.findall("[+-]?\d+\.\d*|\d", f)[0],
+        #                     "tot_charge": re.findall("[+-]?\d+\.\d*|\d", f)[1],
+        #                     "proj_charge": {
+        #                         "l": re.findall("\,([^=#]+)\=", f)[0],
+        #                         "charge": re.findall("[+-]?\d+\.\d*|\d", f)[2]
+        #                     },
+        #                 }
+        #             )
+        
+
+
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+
+
+
 if __name__ == "__main__":
     cwd = os.getcwd()
-    qe = qe_out(cwd, show_details=True)
+    # qe = qe_out(cwd, show_details=True)
 
-    if "cart2cryst" in sys.argv:
-        dir_f = str(cwd) + "/cnv.txt"
-        atoms_atomic_pos = np.column_stack(
-            (qe.atoms, qe.atomic_pos_cryst)
-        )
-        output_file = open(dir_f, "w")
-        output_file = open(dir_f, "a")
-        output_file.write("convert cart_coord to cryst_coord\n")
-        output_file.write("CELL_PARAMETERS angstrom\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
-        output_file.write("ATOMIC_POSITIONS crystal\n")
-        np.savetxt(output_file, atoms_atomic_pos, "%s")
-        output_file.close()
+    # if "cart2cryst" in sys.argv:
+    #     dir_f = str(cwd) + "/cnv.txt"
+    #     atoms_atomic_pos = np.column_stack(
+    #         (qe.atoms, qe.atomic_pos_cryst)
+    #     )
+    #     output_file = open(dir_f, "w")
+    #     output_file = open(dir_f, "a")
+    #     output_file.write("convert cart_coord to cryst_coord\n")
+    #     output_file.write("CELL_PARAMETERS angstrom\n")
+    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
+    #     output_file.write("ATOMIC_POSITIONS crystal\n")
+    #     np.savetxt(output_file, atoms_atomic_pos, "%s")
+    #     output_file.close()
     
-    if "cryst2cart" in sys.argv:
-        dir_f = str(cwd) + "/cnv.txt"
-        atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
-        output_file = open(dir_f, "w")
-        output_file = open(dir_f, "a")
-        output_file.write("convert cryst_coord to cart_coord\n")
-        output_file.write("CELL_PARAMETERS angstrom\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
-        output_file.write("ATOMIC_POSITIONS angstrom\n")
-        np.savetxt(output_file, atoms_ap_pos, "%s")
-        output_file.close()
+    # if "cryst2cart" in sys.argv:
+    #     dir_f = str(cwd) + "/cnv.txt"
+    #     atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
+    #     output_file = open(dir_f, "w")
+    #     output_file = open(dir_f, "a")
+    #     output_file.write("convert cryst_coord to cart_coord\n")
+    #     output_file.write("CELL_PARAMETERS angstrom\n")
+    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
+    #     output_file.write("ATOMIC_POSITIONS angstrom\n")
+    #     np.savetxt(output_file, atoms_ap_pos, "%s")
+    #     output_file.close()
 
-    if "magnet" in sys.argv:
-        qe.read_magnet()
-        x = np.zeros(qe.nat)
-        y = x
-        # show magnetic moment (scalar) in z-axis
-        magnetic_moment = np.column_stack((x, y, qe.magnet))
-        dir_f = str(cwd) + "/magnet.xsf"
-        atomic_pos_cart_magnet = np.column_stack(
-            (qe.atomic_pos_cart, magnetic_moment)
-        )
-        inp = np.column_stack((qe.atoms, atomic_pos_cart_magnet))
-        output_file = open(dir_f, "w")
-        output_file = open(dir_f, "a")
-        output_file.write("CRYSTAL\n")
-        output_file.write("PRIMVEC\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
-        output_file.write("PRIMCOORD\n")
-        output_file.write(str(qe.nat) + "  1\n")
-        np.savetxt(output_file, inp, "%s")
-        output_file.close()
+    # if "magnet" in sys.argv:
+    #     qe.read_magnet()
+    #     x = np.zeros(qe.nat)
+    #     y = x
+    #     # show magnetic moment (scalar) in z-axis
+    #     magnetic_moment = np.column_stack((x, y, qe.magnet))
+    #     dir_f = str(cwd) + "/magnet.xsf"
+    #     atomic_pos_cart_magnet = np.column_stack(
+    #         (qe.atomic_pos_cart, magnetic_moment)
+    #     )
+    #     inp = np.column_stack((qe.atoms, atomic_pos_cart_magnet))
+    #     output_file = open(dir_f, "w")
+    #     output_file = open(dir_f, "a")
+    #     output_file.write("CRYSTAL\n")
+    #     output_file.write("PRIMVEC\n")
+    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
+    #     output_file.write("PRIMCOORD\n")
+    #     output_file.write(str(qe.nat) + "  1\n")
+    #     np.savetxt(output_file, inp, "%s")
+    #     output_file.close()
+
+    if "pdos" in sys.argv:
+        pdos = read_pdos(cwd)
+        print(pdos.atoms)
+        print(pdos.lowdin_charges)
+        print(np.sum(pdos.lowdin_charges))
+        print(np.sum(pdos.lowdin_charges[0:10]))
+        print(np.sum(pdos.lowdin_charges[10:]))
