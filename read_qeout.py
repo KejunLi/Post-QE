@@ -180,7 +180,9 @@ class qe_out(object):
                 temp = self.lines[i+1:i+self.ntyp+1]
                 for j in range(self.ntyp):
                     temp[j] = temp[j].strip("\n").split()
-                    self.atomic_species.update({temp[j][0]: float(temp[j][2])})
+                    self.atomic_species.update(
+                        {re.sub(r"[^a-zA-Z]", "", temp[j][0]): float(temp[j][2])}
+                    )
             elif "number of k points" in line:
                 self.nk = int(re.findall(r"[+-]?\d+", line)[0])
                 self.kpts_cart_coord = np.zeros((self.nk, 3))
@@ -739,13 +741,26 @@ class qe_out(object):
                     )
             if "End of BFGS Geometry Optimization" in line:
                 is_geometry_optimized = True
-                if "crystal" in self.lines[i+5]: # crystal fractional coordinate
+                # unexpected additional line will appear between 
+                # "End of BFGS Geometry Optimization" and "ATOMIC_POSITIONS"
+                # when *.bfgs file is deleted
+                # Now it is necessary to find the line with "ATOMIC_POSITIONS"
+                for j in np.linspace(i, i+10, dtype=int):
+                    if "ATOMIC_POSITIONS" in self.lines[j]:
+                        n = j - i
+                        break
+                if "crystal" in self.lines[i+n]: # crystal fractional coordinate
+                    # print("crystal")
                     for j in range(self.nat):
-                        self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
+                        self.atomsfull[j] = (
+                            self.lines[i+(n+1)+j].strip().split()[0]
+                        )
                         # substitute any digit in self.atomsfull with nothing
-                        self.atoms[j] = re.sub(r"D+", "", self.atomsfull[j])
+                        self.atoms[j] = re.sub(
+                            r"[^a-zA-Z]", "", self.atomsfull[j]
+                        )
                         self.atomic_pos_cryst[j] = (
-                            self.lines[i+6+j].strip().split()[1:4]
+                            self.lines[i+(n+1)+j].strip().split()[1:4]
                         )
                     # The following converts the fractional crystal coordinates
                     # to cartesian coordinates in angstrom
@@ -754,17 +769,23 @@ class qe_out(object):
                     )
                 elif "angstrom" in self.lines[i+5]: # cartisian coordinate
                     for j in range(self.nat):
-                        self.atomsfull[j] = self.lines[i+6+j].strip().split()[0]
+                        self.atomsfull[j] = (
+                            self.lines[i+(n+1)+j].strip().split()[0]
+                        )
                         # substitute any digit in self.atomsfull with nothing
-                        self.atoms[j] = re.sub(r"D+", "", self.atomsfull[j])
+                        self.atoms[j] = re.sub(
+                            r"[^a-zA-Z]", "", self.atomsfull[j]
+                        )
                         self.atomic_pos_cart[j] = (
-                            self.lines[i+6+j].strip().split()[1:4]
+                            self.lines[i+(n+1)+j].strip().split()[1:4]
                         )
                     # The following converts the cartesian coordinates in 
                     # angstrom to fractional crystal coordinates
                     self.atomic_pos_cryst = np.matmul(
                         self.atomic_pos_cart, self.inv_cryst_axes
                     )
+                else:
+                    raise ValueError("ATOMIC_POSITIONS are not properly read.")
 
         if not is_geometry_optimized:
             if self.show_details:
@@ -1433,59 +1454,59 @@ class read_pdos(object):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    # qe = qe_out(cwd, show_details=True)
+    qe = qe_out(cwd, show_details=True)
 
-    # if "cart2cryst" in sys.argv:
-    #     dir_f = str(cwd) + "/cnv.txt"
-    #     atoms_atomic_pos = np.column_stack(
-    #         (qe.atoms, qe.atomic_pos_cryst)
-    #     )
-    #     output_file = open(dir_f, "w")
-    #     output_file = open(dir_f, "a")
-    #     output_file.write("convert cart_coord to cryst_coord\n")
-    #     output_file.write("CELL_PARAMETERS angstrom\n")
-    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
-    #     output_file.write("ATOMIC_POSITIONS crystal\n")
-    #     np.savetxt(output_file, atoms_atomic_pos, "%s")
-    #     output_file.close()
+    if "cart2cryst" in sys.argv:
+        dir_f = str(cwd) + "/cnv.txt"
+        atoms_atomic_pos = np.column_stack(
+            (qe.atoms, qe.atomic_pos_cryst)
+        )
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("convert cart_coord to cryst_coord\n")
+        output_file.write("CELL_PARAMETERS angstrom\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("ATOMIC_POSITIONS crystal\n")
+        np.savetxt(output_file, atoms_atomic_pos, "%s")
+        output_file.close()
     
-    # if "cryst2cart" in sys.argv:
-    #     dir_f = str(cwd) + "/cnv.txt"
-    #     atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
-    #     output_file = open(dir_f, "w")
-    #     output_file = open(dir_f, "a")
-    #     output_file.write("convert cryst_coord to cart_coord\n")
-    #     output_file.write("CELL_PARAMETERS angstrom\n")
-    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
-    #     output_file.write("ATOMIC_POSITIONS angstrom\n")
-    #     np.savetxt(output_file, atoms_ap_pos, "%s")
-    #     output_file.close()
+    if "cryst2cart" in sys.argv:
+        dir_f = str(cwd) + "/cnv.txt"
+        atoms_ap_pos = np.column_stack((qe.atoms, qe.atomic_pos_cart))
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("convert cryst_coord to cart_coord\n")
+        output_file.write("CELL_PARAMETERS angstrom\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("ATOMIC_POSITIONS angstrom\n")
+        np.savetxt(output_file, atoms_ap_pos, "%s")
+        output_file.close()
 
-    # if "magnet" in sys.argv:
-    #     qe.read_magnet()
-    #     x = np.zeros(qe.nat)
-    #     y = x
-    #     # show magnetic moment (scalar) in z-axis
-    #     magnetic_moment = np.column_stack((x, y, qe.magnet))
-    #     dir_f = str(cwd) + "/magnet.xsf"
-    #     atomic_pos_cart_magnet = np.column_stack(
-    #         (qe.atomic_pos_cart, magnetic_moment)
-    #     )
-    #     inp = np.column_stack((qe.atoms, atomic_pos_cart_magnet))
-    #     output_file = open(dir_f, "w")
-    #     output_file = open(dir_f, "a")
-    #     output_file.write("CRYSTAL\n")
-    #     output_file.write("PRIMVEC\n")
-    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
-    #     output_file.write("PRIMCOORD\n")
-    #     output_file.write(str(qe.nat) + "  1\n")
-    #     np.savetxt(output_file, inp, "%s")
-    #     output_file.close()
+    if "magnet" in sys.argv:
+        qe.read_magnet()
+        x = np.zeros(qe.nat)
+        y = x
+        # show magnetic moment (scalar) in z-axis
+        magnetic_moment = np.column_stack((x, y, qe.magnet))
+        dir_f = str(cwd) + "/magnet.xsf"
+        atomic_pos_cart_magnet = np.column_stack(
+            (qe.atomic_pos_cart, magnetic_moment)
+        )
+        inp = np.column_stack((qe.atoms, atomic_pos_cart_magnet))
+        output_file = open(dir_f, "w")
+        output_file = open(dir_f, "a")
+        output_file.write("CRYSTAL\n")
+        output_file.write("PRIMVEC\n")
+        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        output_file.write("PRIMCOORD\n")
+        output_file.write(str(qe.nat) + "  1\n")
+        np.savetxt(output_file, inp, "%s")
+        output_file.close()
 
-    if "pdos" in sys.argv:
-        pdos = read_pdos(cwd)
-        print(pdos.atoms)
-        print(pdos.lowdin_charges)
-        print(np.sum(pdos.lowdin_charges))
-        print(np.sum(pdos.lowdin_charges[0:10]))
-        print(np.sum(pdos.lowdin_charges[10:]))
+    # if "pdos" in sys.argv:
+    #     pdos = read_pdos(cwd)
+    #     print(pdos.atoms)
+    #     print(pdos.lowdin_charges)
+    #     print(np.sum(pdos.lowdin_charges))
+    #     print(np.sum(pdos.lowdin_charges[0:10]))
+    #     print(np.sum(pdos.lowdin_charges[10:]))
