@@ -138,9 +138,9 @@ class qe_out(object):
         for i, line in enumerate(self.lines):
             if "number of atoms/cell" in line:
                 self.nat = int(re.findall(r"[+-]?\d+", line)[0])
-            elif "number of atomic types" in line:
+            if "number of atomic types" in line:
                 self.ntyp = int(re.findall(r"[+-]?\d+", line)[0])
-            elif "number of electrons" in line:
+            if "number of electrons" in line:
                 self.ne = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
                 if "up:" in line and "down:" in line:
                     self.spinpol = True # spin polarization
@@ -148,19 +148,19 @@ class qe_out(object):
                     self.dn_ne = float(re.findall(r"[+-]?\d+\.\d*", line)[2])
                 else:
                     self.spinpol = False
-            elif "number of Kohn-Sham states" in line:
+            if "number of Kohn-Sham states" in line:
                 self.nbnd = int(re.findall(r"[+-]?\d+", line)[0])
-            elif "kinetic-energy cutoff" in line:
+            if "kinetic-energy cutoff" in line:
                 self.ecutwfc = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
-            elif "mixing beta" in line:
+            if "mixing beta" in line:
                 self.mixing_beta = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
-            elif "Exchange-correlation" in line:
+            if "Exchange-correlation" in line:
                 self.xc_functional = re.search(r"PBE0|PBE|HSE|.", line).group(0)
-            elif "EXX-fraction" in line:
+            if "EXX-fraction" in line:
                 self.exx_fraction = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
-            elif "spin-orbit" in line:
+            if "spin-orbit" in line:
                 self.soc = True
-            elif "celldm(1)" in line: # lattic constant
+            if "celldm(1)" in line: # lattic constant
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
                 # read celldm1 and convert the unit from bohr to angstron
@@ -176,14 +176,28 @@ class qe_out(object):
                     )
                 self.cryst_axes = self.cryst_axes * self.celldm1
                 self.inv_cryst_axes = np.linalg.inv(self.cryst_axes)
-            elif "atomic species   valence    mass" in line:
+            if "CELL_PARAMETERS" in line:
+                if "alat" in line:
+                    alat = re.findall(r"[+-]?\d+\.\d*", line)
+                    for j in range(3):
+                        self.cryst_axes[j, :] = re.findall(
+                            r"[+-]?\d+\.\d*", self.lines[i+1+j]
+                        )
+                    self.cryst_axes *= alat
+                elif "angstrom" in line:
+                    for j in range(3):
+                        self.cryst_axes[j, :] = re.findall(
+                            r"[+-]?\d+\.\d*", self.lines[i+1+j]
+                        )
+                self.inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+            if "atomic species   valence    mass" in line:
                 temp = self.lines[i+1:i+self.ntyp+1]
                 for j in range(self.ntyp):
                     temp[j] = temp[j].strip("\n").split()
                     self.atomic_species.update(
                         {re.sub(r"[^a-zA-Z]", "", temp[j][0]): float(temp[j][2])}
                     )
-            elif "number of k points" in line:
+            if "number of k points" in line:
                 self.nk = int(re.findall(r"[+-]?\d+", line)[0])
                 self.kpts_cart_coord = np.zeros((self.nk, 3))
                 self.kpts_cryst_coord = np.zeros((self.nk, 3))
@@ -210,13 +224,13 @@ class qe_out(object):
                     self.kpts_cryst_coord = np.around(
                         self.kpts_cryst_coord, decimals=6
                     )
-            elif "SPIN" in line:
+            if "SPIN" in line:
                 self.spinpol = True
-            elif "occupation numbers" in line: # exist only when being verbosity
+            if "occupation numbers" in line: # exist only when being verbosity
                 self.exist_occ = True
-            elif "End of self-consistent calculation" in line:
+            if "End of self-consistent calculation" in line:
                 self.scf_cycle += 1
-            elif "EXX self-consistency reached" in line:
+            if "EXX self-consistency reached" in line:
                 self.exx_scf_cycle += 1
 
 
@@ -745,7 +759,7 @@ class qe_out(object):
                 # "End of BFGS Geometry Optimization" and "ATOMIC_POSITIONS"
                 # when *.bfgs file is deleted
                 # Now it is necessary to find the line with "ATOMIC_POSITIONS"
-                for j in np.linspace(i, i+10, dtype=int):
+                for j in np.linspace(i, i+50, dtype=int):
                     if "ATOMIC_POSITIONS" in self.lines[j]:
                         n = j - i
                         break
