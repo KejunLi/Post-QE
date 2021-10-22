@@ -18,7 +18,7 @@ class read_xsf_xyz(object):
     +   2. Method read_xsf(self)
     +
     +   self.nat (number of atoms)
-    +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
+    +   self.cell_parameters (cell parameters in cartesian coordinates, angstrom)
     +   self.atoms (atomic species associated with each atomic position)
     +   self.atomic_pos_cryst (atomic positions in fractional crystal coordinates)
     +   self.atomic_pos_cart (atomic positions in cartesian coordinates, angstrom)
@@ -69,13 +69,13 @@ class read_xsf_xyz(object):
             raise IOError("Fail to open xsf or xyz file")
 
     def read_xsf(self):
-        self.cryst_axes = np.zeros((3, 3))
+        self.cell_parameters = np.zeros((3, 3))
         self.nat = 0
 
         for i, line in enumerate(self.lines):
             if "PRIMVEC" in line:
                 for j in range(3):
-                    self.cryst_axes[j, :] = re.findall(
+                    self.cell_parameters[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+1+j]
                     )
             if "PRIMCOORD" in line:
@@ -102,9 +102,9 @@ class read_xsf_xyz(object):
                             self.lines[i+2+j].strip().split()[4:]
                         )
         
-        inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+        inv_cell_parameters = np.linalg.inv(self.cell_parameters)
 
-        self.atomic_pos_cryst = np.matmul(self.atomic_pos_cart, inv_cryst_axes)
+        self.atomic_pos_cryst = np.matmul(self.atomic_pos_cart, inv_cell_parameters)
 
     def read_xyz(self):
         self.nat = int(re.findall(r"[+-]?\d+", self.lines[0])[0])
@@ -148,7 +148,7 @@ if __name__ == "__main__":
             outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf", "a")
             outfile.write("CRYSTAL\n")
             outfile.write("PRIMVEC\n")
-            np.savetxt(outfile, input_f.cryst_axes, "%.10f")
+            np.savetxt(outfile, input_f.cell_parameters, "%.10f")
             outfile.write("PRIMCOORD\n")
             outfile.write(str(nat) + "  1\n")
             np.savetxt(outfile, atoms_atomic_pos_cart_d_coord, "%s")

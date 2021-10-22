@@ -6,9 +6,22 @@ from read_qeout import qe_out
 
 path = os.getcwd()
 qe = qe_out(os.path.join(path, sys.argv[1]), show_details=False)
-if sys.argv[2]:
-    cellpara = qe.cryst_axes
-    cellpara[:2, :] *= float(sys.argv[2])
-else:
-    cellpara = qe.cryst_axes
+if len(sys.argv) == 2:
+    cellpara = qe.cell_parameters
+elif len(sys.argv) == 3:
+    if type(sys.argv[2]) == int or type(sys.argv[2]) == float:
+        cellpara = qe.cell_parameters
+        cellpara[:2, :] *= float(sys.argv[2])
+    elif sys.argv[2] == "bohr":
+        cellpara = qe.cell_parameters
+        cellpara[:, :] *= float(1.88973)
+elif len(sys.argv) == 4:
+    if sys.argv[2] == "2d":
+        cellpara = qe.cell_parameters
+        cellpara[:2, :] *= float(sys.argv[3])
+    elif sys.argv[2] == "3d":
+        cellpara = qe.cell_parameters
+        cellpara[:, :] *= float(sys.argv[3])
+    
+    
 print(cellpara)

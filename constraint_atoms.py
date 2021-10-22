@@ -12,13 +12,13 @@ class cstr_atoms(object):
     +   1. Constructor
     +   Input:
     +   atoms (atomic species) 
-    +   cryst_axes (crystal axes) 
+    +   cell_parameters (crystal axes) 
     +   atomic_pos_cryst (atomic positions)
     +
     +   Attributes:
     +   self.atoms (atomic species associated with each atomic position)
     +   self.nat (number of atoms)
-    +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
+    +   self.cell_parameters (cell parameters in cartesian coordinates, angstrom)
     +   self.atomic_pos_cryst (atomic positions in fractional crystal coordinates)
     +   self.atomic_pos_cart (atomic positions in cartesian coordinates, angstrom)
     +   self.atomic_mass (atomic mass associated with each atom)
@@ -72,11 +72,11 @@ class cstr_atoms(object):
     +   No return
     ++--------------------------------------------------------------------------
     """
-    def __init__(self, atoms=None, cryst_axes=None, atomic_pos_cryst=None):
+    def __init__(self, atoms=None, cell_parameters=None, atomic_pos_cryst=None):
         self.atoms = atoms
-        self.cryst_axes = cryst_axes
+        self.cell_parameters = cell_parameters
         self.atomic_pos_cryst = atomic_pos_cryst
-        self.atomic_pos_cart = np.matmul(atomic_pos_cryst, cryst_axes)
+        self.atomic_pos_cart = np.matmul(atomic_pos_cryst, cell_parameters)
         self.nat = atomic_pos_cryst.shape[0]
 
         atp = atoms_properties()
@@ -123,9 +123,9 @@ class cstr_atoms(object):
         ++----------------------------------------------------------------------
         """
         # basis vectors of the Bravis lattice of the supercell
-        a = np.matmul([1, 0, 0], self.cryst_axes)
-        b = np.matmul([0, 1, 0], self.cryst_axes)
-        c = np.matmul([0, 0, 1], self.cryst_axes)
+        a = np.matmul([1, 0, 0], self.cell_parameters)
+        b = np.matmul([0, 1, 0], self.cell_parameters)
+        c = np.matmul([0, 0, 1], self.cell_parameters)
 
         # meanings of array indices in order:
         # block position: i, j, k; atom_i; atomic_pos_cryst: x, y, z
@@ -134,7 +134,7 @@ class cstr_atoms(object):
         self.cubes_mass = np.zeros((3, 3, 3, self.nat))
         self.cubes_atoms = np.zeros((3, 3, 3, self.nat), dtype="U4")
 
-        inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+        inv_cell_parameters = np.linalg.inv(self.cell_parameters)
 
         x = [-1, 0, 1]
         y = x
@@ -146,7 +146,7 @@ class cstr_atoms(object):
                         self.atomic_pos_cart + a * xval + b * yval + c * zval
                     )
                     self.cubes_atomic_pos_cryst[i, j, k, :, :] = np.matmul(
-                        self.cubes[i, j, k, :, :], inv_cryst_axes
+                        self.cubes[i, j, k, :, :], inv_cell_parameters
                     )
                     self.cubes_mass[i, j, k, :] = self.atomic_mass
                     self.cubes_atoms[i, j, k, :] = self.atoms
@@ -167,9 +167,9 @@ class cstr_atoms(object):
         ++----------------------------------------------------------------------
         """
         # basis vectors of the Bravis lattice of the supercell
-        a = np.matmul([1, 0, 0], self.cryst_axes)
-        b = np.matmul([0, 1, 0], self.cryst_axes)
-        c = np.matmul([0, 0, 1], self.cryst_axes)
+        a = np.matmul([1, 0, 0], self.cell_parameters)
+        b = np.matmul([0, 1, 0], self.cell_parameters)
+        c = np.matmul([0, 0, 1], self.cell_parameters)
         self.images_atomic_pos_cart = np.zeros((mul**3*self.nat, 3))
         self.images_mass = np.zeros(mul**3*self.nat)
         for i in range(mul):
@@ -187,7 +187,7 @@ class cstr_atoms(object):
     def sphere(self, center=[0, 0, 0], radius=0):
         """
         ++----------------------------------------------------------------------
-        +   This method should be called after self.magic_cube()
+        +   This method should be called after self.magic_cube(self)
         +
         +   atoms in the sphere(center, radius) will be free
         +   atoms out of the sphere(center, radius) will be fixed

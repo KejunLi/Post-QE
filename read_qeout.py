@@ -24,9 +24,10 @@ class qe_out(object):
     +   self.xc_functional (exhange-correlation functional)
     +   self.exx_fraction (exact-exchange fraction)
     +   self.celldm1 (lattice parameter, angstrom)
-    +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
-    +   self.inv_cryst_axes (inverse crystal axes in cartesian coordinates, angstrom^-1)
-    +   self.R_axes (reciprocal axes in crystal coordinate)
+    +   self.cell_parameters (cell parameters in cartesian coordinates, angstrom)
+    +   self.cryst_axes (crystal axes in cartesian coordinates, alat)
+    +   self.inv_cell_parameters (inverse cell parameters in cartesian coordinates, angstrom^-1)
+    +   self.R_axes (reciprocal axes in crystal coordinate, 2pi * alat^-1)
     +   self.atomic_species (atomic species with mass)
     +   self.nk (number of k points)
     +   self.kpts_cart_coord (k points in cartesian coordinates)
@@ -161,6 +162,7 @@ class qe_out(object):
             if "spin-orbit" in line:
                 self.soc = True
             if "celldm(1)" in line: # lattic constant
+                self.cell_parameters = np.zeros((3, 3))
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
                 # read celldm1 and convert the unit from bohr to angstron
@@ -174,22 +176,24 @@ class qe_out(object):
                     self.R_axes[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+9+j]
                     )
-                self.cryst_axes = self.cryst_axes * self.celldm1
-                self.inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+                self.cell_parameters = self.cryst_axes * self.celldm1
+                self.inv_cell_parameters = np.linalg.inv(self.cell_parameters)
             if "CELL_PARAMETERS" in line:
                 if "alat" in line:
-                    alat = re.findall(r"[+-]?\d+\.\d*", line)
+                    alat = (
+                        float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Bohr2Ang
+                    )
                     for j in range(3):
                         self.cryst_axes[j, :] = re.findall(
                             r"[+-]?\d+\.\d*", self.lines[i+1+j]
                         )
-                    self.cryst_axes *= alat
+                    self.cell_parameters = self.cryst_axes * alat
                 elif "angstrom" in line:
                     for j in range(3):
-                        self.cryst_axes[j, :] = re.findall(
+                        self.cell_parameters[j, :] = re.findall(
                             r"[+-]?\d+\.\d*", self.lines[i+1+j]
                         )
-                self.inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+                self.inv_cell_parameters = np.linalg.inv(self.cell_parameters)
             if "atomic species   valence    mass" in line:
                 temp = self.lines[i+1:i+self.ntyp+1]
                 for j in range(self.ntyp):
@@ -738,7 +742,7 @@ class qe_out(object):
                 # The following converts the fractional crystal coordinates
                 # to cartesian coordinates in angstrom
                 self.atomic_pos_cryst = np.matmul(
-                        self.atomic_pos_cart, self.inv_cryst_axes
+                        self.atomic_pos_cart, self.inv_cell_parameters
                     )
             if "Crystallographic axes" in line:
                 for j in range(self.nat):
@@ -751,7 +755,7 @@ class qe_out(object):
                 # The following converts the fractional crystal coordinates
                 # to cartesian coordinates in angstrom
                 self.atomic_pos_cart = np.matmul(
-                        self.atomic_pos_cryst, self.cryst_axes
+                        self.atomic_pos_cryst, self.cell_parameters
                     )
             if "End of BFGS Geometry Optimization" in line:
                 is_geometry_optimized = True
@@ -779,7 +783,7 @@ class qe_out(object):
                     # The following converts the fractional crystal coordinates
                     # to cartesian coordinates in angstrom
                     self.atomic_pos_cart = np.matmul(
-                        self.atomic_pos_cryst, self.cryst_axes
+                        self.atomic_pos_cryst, self.cell_parameters
                     )
                 elif "angstrom" in self.lines[i+5]: # cartisian coordinate
                     for j in range(self.nat):
@@ -796,7 +800,7 @@ class qe_out(object):
                     # The following converts the cartesian coordinates in 
                     # angstrom to fractional crystal coordinates
                     self.atomic_pos_cryst = np.matmul(
-                        self.atomic_pos_cart, self.inv_cryst_axes
+                        self.atomic_pos_cart, self.inv_cell_parameters
                     )
                 else:
                     raise ValueError("ATOMIC_POSITIONS are not properly read.")
@@ -1045,8 +1049,10 @@ class qe_bands(object):
     +   self.mixing_beta (mixing factor for self-consistency)
     +   self.xc_functional (exhange-correlation functional)
     +   self.exx_fraction (exact-exchange fraction)
-    +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
-    +   self.R_axes (reciprocal axes in cartesian coordinates, angstrom^-1)
+    +   self.cell_parameters (cell parameters in cartesian coordinates, angstrom)
+    +   self.cryst_axes (crystal axes in cartesian coordinates, alat)
+    +   self.inv_cell_parameters (inverse cell parameters in cartesian coordinates, angstrom^-1)
+    +   self.R_axes (reciprocal axes in cartesian coordinates, 2pi*alat^-1)
     +   self.atomic_species (atomic species with mass)
     +   self.nk (number of k points)
     +   self.kpts_cart_coord (k points in cartesian coordinates)
@@ -1097,9 +1103,9 @@ class qe_bands(object):
         for i, line in enumerate(self.lines):
             if "number of atoms/cell" in line:
                 self.nat = int(re.findall(r"[+-]?\d+", line)[0])
-            elif "number of atomic types" in line:
+            if "number of atomic types" in line:
                 self.ntyp = int(re.findall(r"[+-]?\d+", line)[0])
-            elif "number of electrons" in line:
+            if "number of electrons" in line:
                 self.ne = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
                 if "up:" in line and "down:" in line:
                     self.spinpol = True # spin polarization
@@ -1107,19 +1113,20 @@ class qe_bands(object):
                     self.dn_ne = float(re.findall(r"[+-]?\d+\.\d*", line)[2])
                 else:
                     self.spinpol = False
-            elif "number of Kohn-Sham states" in line:
+            if "number of Kohn-Sham states" in line:
                 self.nbnd = int(re.findall(r"[+-]?\d+", line)[0])
-            elif "kinetic-energy cutoff" in line:
+            if "kinetic-energy cutoff" in line:
                 self.ecutwfc = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
-            elif "mixing beta" in line:
+            if "mixing beta" in line:
                 self.mixing_beta = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
-            elif "Exchange-correlation" in line:
+            if "Exchange-correlation" in line:
                 self.xc_functional = re.search(r"PBE0|PBE|HSE|.", line).group(0)
-            elif "EXX-fraction" in line:
+            if "EXX-fraction" in line:
                 self.exx_fraction = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
-            elif "spin-orbit" in line:
+            if "spin-orbit" in line:
                 self.soc = True
-            elif "celldm(1)" in line:
+            if "celldm(1)" in line:
+                self.cell_parameters = np.zeros((3, 3))
                 self.cryst_axes = np.zeros((3, 3))
                 self.R_axes = np.zeros((3, 3))
                 celldm1 = (
@@ -1132,14 +1139,14 @@ class qe_bands(object):
                     self.R_axes[j, :] = re.findall(
                         r"[+-]?\d+\.\d*", self.lines[i+9+j]
                     )
-                self.cryst_axes = self.cryst_axes * celldm1
+                self.cell_parameters = self.cryst_axes * celldm1
                 self.R_axes = self.R_axes / celldm1
-            elif "atomic species   valence    mass" in line:
+            if "atomic species   valence    mass" in line:
                 temp = self.lines[i+1:i+self.ntyp+1]
                 for j in range(self.ntyp):
                     temp[j] = temp[j].strip("\n").split()
                     self.atomic_species.update({temp[j][0]: float(temp[j][2])})
-            elif "number of k points" in line:
+            if "number of k points" in line:
                 self.nk = int(re.findall(r"[+-]?\d+", line)[0])
                 self.kpts_cart_coord = np.zeros((self.nk, 3))
                 self.kpts_cryst_coord = np.zeros((self.nk, 3))
@@ -1166,7 +1173,7 @@ class qe_bands(object):
                     self.kpts_cryst_coord = np.around(
                         self.kpts_cryst_coord, decimals=6
                     )
-            elif "SPIN" in line:
+            if "SPIN" in line:
                 self.spinpol = True
         
         self.show_details = show_details
@@ -1479,7 +1486,7 @@ if __name__ == "__main__":
         output_file = open(dir_f, "a")
         output_file.write("convert cart_coord to cryst_coord\n")
         output_file.write("CELL_PARAMETERS angstrom\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        np.savetxt(output_file, qe.cell_parameters, "%.10f")
         output_file.write("ATOMIC_POSITIONS crystal\n")
         np.savetxt(output_file, atoms_atomic_pos, "%s")
         output_file.close()
@@ -1491,7 +1498,7 @@ if __name__ == "__main__":
         output_file = open(dir_f, "a")
         output_file.write("convert cryst_coord to cart_coord\n")
         output_file.write("CELL_PARAMETERS angstrom\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        np.savetxt(output_file, qe.cell_parameters, "%.10f")
         output_file.write("ATOMIC_POSITIONS angstrom\n")
         np.savetxt(output_file, atoms_ap_pos, "%s")
         output_file.close()
@@ -1511,7 +1518,7 @@ if __name__ == "__main__":
         output_file = open(dir_f, "a")
         output_file.write("CRYSTAL\n")
         output_file.write("PRIMVEC\n")
-        np.savetxt(output_file, qe.cryst_axes, "%.10f")
+        np.savetxt(output_file, qe.cell_parameters, "%.10f")
         output_file.write("PRIMCOORD\n")
         output_file.write(str(qe.nat) + "  1\n")
         np.savetxt(output_file, inp, "%s")

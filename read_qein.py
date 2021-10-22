@@ -20,8 +20,8 @@ class qe_in(object):
     +   self.nat (number of atoms)
     +   self.ntyp (number of atomic types)
     ++--------------------------------------------------------------------------
-    +   2. Method read_cryst_axes(self)
-    +   self.cryst_axes (crystal axes in cartesian coordinates, angstrom)
+    +   2. Method read_cell_parameters(self)
+    +   self.cell_parameters (cell parameters in cartesian coordinates, angstrom)
     +   self.ibrav (Bravais-lattice index, now only includes 0, 4, 8)
     +
     +   No return
@@ -69,12 +69,12 @@ class qe_in(object):
                 self.ntyp = int(re.findall(r"[+-]?\d+", line)[0])
 
         # call dynamic methods
-        self.read_cryst_axes()
+        self.read_cell_parameters()
         self.read_atomic_pos()
         self.read_kpts()
 
-    def read_cryst_axes(self):
-        self.cryst_axes = np.zeros((3, 3))
+    def read_cell_parameters(self):
+        self.cell_parameters = np.zeros((3, 3))
 
         # physical constants
         Bohr = 5.29177210903e-11 # unit m
@@ -84,7 +84,7 @@ class qe_in(object):
             for i, line in enumerate(self.lines):
                 if "CELL_PARAMETERS" in line:
                     for j in range(3):
-                        self.cryst_axes[j, :] = re.findall(
+                        self.cell_parameters[j, :] = re.findall(
                             r"[+-]?\d+\.\d*", self.lines[i+1+j]
                         )
                 else:
@@ -110,10 +110,10 @@ class qe_in(object):
                 ):
                     c = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
 
-            self.cryst_axes[0, 0] = a
-            self.cryst_axes[1, 0] = -a * np.sin(np.pi/6)
-            self.cryst_axes[1, 1] = a * np.cos(np.pi/6)
-            self.cryst_axes[2, 2] = c
+            self.cell_parameters[0, 0] = a
+            self.cell_parameters[1, 0] = -a * np.sin(np.pi/6)
+            self.cell_parameters[1, 1] = a * np.cos(np.pi/6)
+            self.cell_parameters[2, 2] = c
 
         elif self.ibrav == 8: # structure is orthorhombic
             # the part of code assumes that celldm(1) appears before celldm(2) 
@@ -145,9 +145,9 @@ class qe_in(object):
                 ):
                     c = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
 
-            self.cryst_axes[0, 0] = a
-            self.cryst_axes[1, 1] = b
-            self.cryst_axes[2, 2] = c
+            self.cell_parameters[0, 0] = a
+            self.cell_parameters[1, 1] = b
+            self.cell_parameters[2, 2] = c
 
 
     def read_atomic_pos(self):
@@ -182,12 +182,12 @@ class qe_in(object):
                     )
         if is_cryst_coord:
             self.atomic_pos_cart = np.matmul(
-                self.atomic_pos_cryst, self.cryst_axes
+                self.atomic_pos_cryst, self.cell_parameters
             )
         else:
-            inv_cryst_axes = np.linalg.inv(self.cryst_axes)
+            inv_cell_parameters = np.linalg.inv(self.cell_parameters)
             self.atomic_pos_cryst = np.matmul(
-                self.atomic_pos_cart, inv_cryst_axes
+                self.atomic_pos_cart, inv_cell_parameters
             )
 
         self.atomic_mass = np.zeros(self.nat)
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     #     output_file = open(dir_f, "a")
     #     output_file.write("convert cart_coord to cryst_coord\n")
     #     output_file.write("CELL_PARAMETERS angstrom\n")
-    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
+    #     np.savetxt(output_file, qe.cell_parameters, "%.10f")
     #     output_file.write("ATOMIC_POSITIONS crystal\n")
     #     np.savetxt(output_file, atoms_atomic_pos, "%s")
     #     output_file.close()
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     #     output_file = open(dir_f, "a")
     #     output_file.write("convert cryst_coord to cart_coord\n")
     #     output_file.write("CELL_PARAMETERS angstrom\n")
-    #     np.savetxt(output_file, qe.cryst_axes, "%.10f")
+    #     np.savetxt(output_file, qe.cell_parameters, "%.10f")
     #     output_file.write("ATOMIC_POSITIONS angstrom\n")
     #     np.savetxt(output_file, atoms_ap_pos, "%s")
     #     output_file.close()
@@ -308,7 +308,7 @@ if __name__ == "__main__":
             outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf", "a")
             outfile.write("CRYSTAL\n")
             outfile.write("PRIMVEC\n")
-            np.savetxt(outfile, input_f.cryst_axes, "%.10f")
+            np.savetxt(outfile, input_f.cell_parameters, "%.10f")
             outfile.write("PRIMCOORD\n")
             outfile.write(str(nat) + "  1\n")
             np.savetxt(outfile, atoms_atomic_pos_cart_d_coord, "%s")

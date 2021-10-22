@@ -11,18 +11,18 @@ class strain_and_deform_cell(object):
     =---------------------------------------------------------------------------
     +   1. Constructor
     +   Input:
-    +   cryst_axes (crystal axes)
+    +   cell_parameters (cell parameters)
     +   atomic_pos_cryst (atomic positions)
     =---------------------------------------------------------------------------
     +   2. Method unaxial_strain(self, strain, theta)
     +   Input:
-    +   strain (strain applied to crystal axes in x-axis by default)
+    +   strain (strain applied to cell parameters in x-axis by default)
     +   theta: (rotation angle in degree between x-axis and symmetry axis, 
     +   e.g. C2 axis)
     +
     +   Attributes: none
     +
-    +   return(new_cryst_axes)
+    +   return(new_cell_parameters)
     =---------------------------------------------------------------------------
     +   3. Method gaussian_wrinkle(self, amp, std, peak)
     +   Input:
@@ -37,28 +37,28 @@ class strain_and_deform_cell(object):
     +   return(atomic_pos_cart)
     =---------------------------------------------------------------------------
     """
-    def __init__(self, cryst_axes=None, atomic_pos_cryst=None):
-        self._cryst_axes = cryst_axes
-        self.cryst_axes = cryst_axes
-        self._inv_cryst_axes = np.linalg.inv(self._cryst_axes)
+    def __init__(self, cell_parameters=None, atomic_pos_cryst=None):
+        self._cell_parameters = cell_parameters
+        self.cell_parameters = cell_parameters
+        self._inv_cell_parameters = np.linalg.inv(self._cell_parameters)
         self._atomic_pos_cryst = atomic_pos_cryst
         self.atomic_pos_cryst = atomic_pos_cryst
         self.nat = atomic_pos_cryst.shape[0]
 
         # call dynamic methods
-        self._atomic_pos_cart = np.matmul(atomic_pos_cryst, self._cryst_axes)
+        self._atomic_pos_cart = np.matmul(atomic_pos_cryst, self._cell_parameters)
         self.rotate()
     
     def rotate(self, alpha=0, beta=0, gamma=0):
         """
         =-----------------------------------------------------------------------
         +   Let atomic positions in fractional crystal coordinates be A, 
-        +   crystal axes be C, rotational matrix be R.
+        +   cell parameters be C, rotational matrix be R.
         +
         +   The atomic positions in angstrom A_1 = AC.
         +   By rotation, (A_2)^T = R(A_1)^T = R(C^T)(A^T)
-        +   Therefore, new crystal axes after rotation is CR^T, and the atomic
-        +   positions in crystal axes are the same as they are.
+        +   Therefore, new cell parameters after rotation is CR^T, and the atomic
+        +   positions in cell parameters are the same as they are.
         +   Here the rotation is only allowed in perpendicular to 2D plane.
         +
         +   Step 1. alpha: rotation along x axis
@@ -97,8 +97,8 @@ class strain_and_deform_cell(object):
         # first rotate along x, then y, finally z
         rotation_mat = np.matmul(rot_z, np.matmul(rot_y, rot_x))
 
-        self.cryst_axes = np.matmul(
-            self._cryst_axes, np.transpose(rotation_mat)
+        self.cell_parameters = np.matmul(
+            self._cell_parameters, np.transpose(rotation_mat)
         )
 
     
@@ -108,12 +108,12 @@ class strain_and_deform_cell(object):
         +   Only change the cell parameters
         +
         +   Let atomic positions in fractional crystal coordinates be A, 
-        +   crystal axes be C, and uniaxial strain matrix be S.
+        +   cell parameters be C, and uniaxial strain matrix be S.
         +
         +   The atomic positions in angstrom A_1 = AC.
         +   By applying strain, (A_2)^T = S(A_1)^T = SC^TA^T.
         +   Here we have A_2 = ACS^T .
-        +   Therefore, the crystal axes after applying strain to the symmetry 
+        +   Therefore, the cell parameters after applying strain to the symmetry 
         +   axis is C_1 = CS^T.
         +   Here the rotation is only allowed in perpendicular to 2D plane.
         =-----------------------------------------------------------------------
@@ -125,7 +125,9 @@ class strain_and_deform_cell(object):
                 [0, 0, 1]
             ]
         )
-        self.cryst_axes = np.matmul(self._cryst_axes, np.transpose(strain_mat))
+        self.cell_parameters = np.matmul(
+            self._cell_parameters, np.transpose(strain_mat)
+        )
 
 
     def uniaxial_strain(self, strain=0, theta=0):
@@ -134,7 +136,7 @@ class strain_and_deform_cell(object):
         +   The uniaxial strain is applied along x-axis
         +
         +   Let atomic positions in fractional crystal coordinates be A, 
-        +   crystal axes be C, rotational matrix be R, 
+        +   cell parameters be C, rotational matrix be R, 
         +   and uniaxial strain matrix be S.
         +
         +   The atomic positions in angstrom A_1 = AC.
@@ -144,7 +146,7 @@ class strain_and_deform_cell(object):
         +   rerotate the atomic positions back to the original, 
         +   so (A_4)^T = R^{-1}(A_3)^T = R^{-1}SR(AC)^T.
         +   Here we have A_4 = AC(R^{-1}SR)^T = A[C(R^{-1}SR)^T].
-        +   Therefore, the crystal axes after applying strain to the symmetry 
+        +   Therefore, the cell parameters after applying strain to the symmetry 
         +   axis is C_1 = C(R^{-1}SR)^T.
         +   Here the rotation is only allowed in perpendicular to 2D plane.
         =-----------------------------------------------------------------------
@@ -167,8 +169,8 @@ class strain_and_deform_cell(object):
         inv_rotation_mat = np.linalg.inv(rotation_mat)
         strain_rot_mat = np.matmul(strain_mat, rotation_mat)
         strain_rot_mat = np.matmul(inv_rotation_mat, strain_rot_mat)
-        self.cryst_axes = np.matmul(
-            self._cryst_axes, np.transpose(strain_rot_mat)
+        self.cell_parameters = np.matmul(
+            self._cell_parameters, np.transpose(strain_rot_mat)
         )
 
     def gaussian(self, amp, std, peak, x):
@@ -226,7 +228,9 @@ class strain_and_deform_cell(object):
         atomic_pos_cart = np.matmul(
             atomic_pos_cart, np.transpose(inv_rotation_mat)
         )
-        self.atomic_pos_cryst = np.matmul(atomic_pos_cart, self._inv_cryst_axes)
+        self.atomic_pos_cryst = np.matmul(
+            atomic_pos_cart, self._inv_cell_parameters
+        )
         return self.atomic_pos_cryst
     
     def gaussian_bump(self, amp=1.0, std=1.0, peak=[0, 0]):
@@ -243,7 +247,9 @@ class strain_and_deform_cell(object):
             * self.gaussian(amp, std, peak[1], atomic_pos_cart[:, 1])
             / amp
         )
-        self.atomic_pos_cryst = np.matmul(atomic_pos_cart, self._inv_cryst_axes)
+        self.atomic_pos_cryst = np.matmul(
+            atomic_pos_cart, self._inv_cell_parameters
+        )
         return(self.atomic_pos_cryst)
 
     # def parameterize_plane(
@@ -277,17 +283,19 @@ if __name__ == "__main__":
     if sys.argv[1].endswith("out"):
         qe = qe_out(os.path.join(cwd, sys.argv[1]), show_details=False)
         sdc = strain_and_deform_cell(
-            cryst_axes=qe.cryst_axes, atomic_pos_cryst=qe.atomic_pos_cryst
+            cell_parameters=qe.cell_parameters, 
+            atomic_pos_cryst=qe.atomic_pos_cryst
         )
         sdc.rotate(theta=float(sys.argv[2]))
-        cellpara = sdc.cryst_axes
+        cellpara = sdc.cell_parameters
     elif sys.argv[1].endswith("in"):
         qe = qe_in(os.path.join(cwd, sys.argv[1]))
         sdc = strain_and_deform_cell(
-            cryst_axes=qe.cryst_axes, atomic_pos_cryst=qe.atomic_pos_cryst
+            cell_parameters=qe.cell_parameters, 
+            atomic_pos_cryst=qe.atomic_pos_cryst
         )
         sdc.rotate(theta=float(sys.argv[2]))
-        cellpara = sdc.cryst_axes
+        cellpara = sdc.cell_parameters
     print(cellpara)
 
     

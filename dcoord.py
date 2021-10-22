@@ -35,7 +35,7 @@ for i in range(len(f_relax)):
         outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf", "a")
         outfile.write("CRYSTAL\n")
         outfile.write("PRIMVEC\n")
-        np.savetxt(outfile, qe.cryst_axes, "%.10f")
+        np.savetxt(outfile, qe.cell_parameters, "%.10f")
         outfile.write("PRIMCOORD\n")
         outfile.write(str(nat) + "  1\n")
         np.savetxt(outfile, atoms_atomic_pos_cart_d_coord, "%s")
