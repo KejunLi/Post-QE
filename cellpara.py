@@ -9,12 +9,12 @@ qe = qe_out(os.path.join(path, sys.argv[1]), show_details=False)
 if len(sys.argv) == 2:
     cellpara = qe.cell_parameters
 elif len(sys.argv) == 3:
-    if type(sys.argv[2]) == int or type(sys.argv[2]) == float:
-        cellpara = qe.cell_parameters
-        cellpara[:2, :] *= float(sys.argv[2])
-    elif sys.argv[2] == "bohr":
+    if sys.argv[2] == "bohr":
         cellpara = qe.cell_parameters
         cellpara[:, :] *= float(1.88973)
+    else:
+        cellpara = qe.cell_parameters
+        cellpara[:2, :] *= float(sys.argv[2])
 elif len(sys.argv) == 4:
     if sys.argv[2] == "2d":
         cellpara = qe.cell_parameters
