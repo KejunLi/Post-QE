@@ -198,9 +198,9 @@ class qe_out(object):
                 temp = self.lines[i+1:i+self.ntyp+1]
                 for j in range(self.ntyp):
                     temp[j] = temp[j].strip("\n").split()
-                    self.atomic_species.update(
-                        {re.sub(r"[^a-zA-Z]", "", temp[j][0]): float(temp[j][2])}
-                    )
+                    element = re.sub(r"[^a-zA-Z]", "", temp[j][0])
+                    mass = float(temp[j][2])
+                    self.atomic_species.update({element: mass})
             if "number of k points" in line:
                 self.nk = int(re.findall(r"[+-]?\d+", line)[0])
                 self.kpts_cart_coord = np.zeros((self.nk, 3))
