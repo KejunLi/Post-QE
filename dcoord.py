@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 import numpy as np
+import argparse
 import sys
 import os
 from read_qeout import qe_out
 
 # calculate the atomic positions displacement between two states after relax
+# add threshold of dcoord
+parser = argparse.ArgumentParser(
+    description="Calculate dR (A) and output VESTA-compatible file (.xsf)."
+)
+parser.add_argument(
+    "dR", type=float, nargs="?", default=0.0, help='dR threshold'
+)
+args = parser.parse_args()
+dR_thr = args.dR
 
 cwd = os.getcwd()
 
@@ -22,6 +32,26 @@ for i in range(len(f_relax)):
     j = i
     while j+1 < len(f_relax):
         d_coord = nuclear_coord[i] - nuclear_coord[j+1]
+        # calculate d_coord amplitude
+        amp_d_coord = np.linalg.norm(d_coord, axis=1)
+        # calculate inverse participation ratio and localization ratio
+        norm_d_coord = d_coord/np.sqrt(np.sum(amp_d_coord**2))
+        norm_d_coord_square = np.einsum("ij,ij->ij", norm_d_coord, norm_d_coord)
+        dr_square_per_atom = np.einsum("ij->i", norm_d_coord_square)
+        IPR = 1.0/np.sum(dr_square_per_atom**2)
+        localization_ratio = len(amp_d_coord)/IPR
+        print("1D effective inverse participation ratio = {:.2f}".format(IPR))
+        print(
+            "1D effective localization ratio = {:.2f}".format(
+                localization_ratio
+            )
+        )
+        # screen d_coord whose amplitude is smaller than dR_thr
+        for k in range(len(amp_d_coord)):
+            if amp_d_coord[k] < dR_thr:
+                d_coord[k] = np.zeros(3)
+            else:
+                pass
         # write dR with atomic positions into xsf file, compatible with VESTA
         atomic_pos_cart_d_coord = np.concatenate(
             (qe.atomic_pos_cart, d_coord), axis=1
