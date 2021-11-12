@@ -785,7 +785,7 @@ class qe_out(object):
                     self.atomic_pos_cart = np.matmul(
                         self.atomic_pos_cryst, self.cell_parameters
                     )
-                elif "angstrom" in self.lines[i+5]: # cartisian coordinate
+                elif "angstrom" in self.lines[i+n]: # cartisian coordinate
                     for j in range(self.nat):
                         self.atomsfull[j] = (
                             self.lines[i+(n+1)+j].strip().split()[0]
