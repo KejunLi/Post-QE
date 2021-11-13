@@ -8,7 +8,7 @@ from read_qeout import qe_out
 # calculate the atomic positions displacement between two states after relax
 # add threshold of dcoord
 parser = argparse.ArgumentParser(
-    description="Calculate dR (A) and output VESTA-compatible file (.xsf)."
+    description="Calculate dR (Angstrom) and output VESTA-compatible *.xsf."
 )
 parser.add_argument(
     "dR", type=float, nargs="?", default=0.0, help='dR threshold'
