@@ -128,7 +128,7 @@ class cstr_atoms(object):
         c = np.matmul([0, 0, 1], self.cell_parameters)
 
         # meanings of array indices in order:
-        # block position: i, j, k; atom_i; atomic_pos_cryst: x, y, z
+        # block indices: i, j, k; atom_i; atomic_pos_cryst: x, y, z
         self.cubes = np.zeros((3, 3, 3, self.nat, 3))
         self.cubes_atomic_pos_cryst = np.zeros((3, 3, 3, self.nat, 3))
         self.cubes_mass = np.zeros((3, 3, 3, self.nat))
