@@ -23,10 +23,16 @@ nuclear_coord = []
 
 for f in os.listdir(cwd):
     if f.startswith("relax"):
-        qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
-        # if qe_out exits, the code will stop here
-        f_relax.append(f)
-        nuclear_coord.append(qe.atomic_pos_cart)
+        if f.endswith(".out"):
+            qe = qe_out(os.path.join(cwd, f), show_details=False)
+            # if qe_out exits, the code will stop here
+            f_relax.append(f)
+            nuclear_coord.append(qe.atomic_pos_cart)
+        else:
+            qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
+            # if qe_out exits, the code will stop here
+            f_relax.append(f)
+            nuclear_coord.append(qe.atomic_pos_cart)
 
 for i in range(len(f_relax)):
     j = i
