@@ -209,7 +209,7 @@ class qe_out(object):
                     for j in range(self.nk):
                         self.kpts_cart_coord[j, :] = np.array(
                             re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
-                        ).astype(np.float)
+                        ).astype(float)
                 if "cryst. coord." in self.lines[i+self.nk+3]:
                     # exist only when being verbosity
                     for j in range(self.nk):
@@ -217,7 +217,7 @@ class qe_out(object):
                             re.findall(
                                 r"[+-]?\d+\.\d*", self.lines[i+j+4+self.nk]
                             )[0:3]
-                        ).astype(np.float)
+                        ).astype(float)
                 else:
                     # convert kpts_cart_coord when not verbose
                     inv_R_axes = np.linalg.inv(self.R_axes)
@@ -391,7 +391,7 @@ class qe_out(object):
                 continue
             elif num_scf == 0 and "   k =" in line and k_counted < nk_spin:
                 # self.kpts[k_counted, :] = \
-                # np.array(re.findall(r"[+-]?\d+\.\d*", line)).astype(np.float)
+                # np.array(re.findall(r"[+-]?\d+\.\d*", line)).astype(float)
                 temp_E = self.lines[i+2 : i+2+rows]
                 temp_occ = self.lines[i+4+rows : i+4+rows*2]
                 for j in range(rows):
@@ -1154,7 +1154,7 @@ class qe_bands(object):
                     for j in range(self.nk):
                         self.kpts_cart_coord[j, :] = np.array(
                             re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
-                        ).astype(np.float)
+                        ).astype(float)
                 if "cryst. coord." in self.lines[i+self.nk+3]:
                     # exist only when being verbosity
                     for j in range(self.nk):
@@ -1162,7 +1162,7 @@ class qe_bands(object):
                             re.findall(
                                 r"[+-]?\d+\.\d*", self.lines[i+j+4+self.nk]
                             )[0:3]
-                        ).astype(np.float)
+                        ).astype(float)
                 else:
                     # convert kpts_cart_coord when not verbose
                     inv_R_axes = np.linalg.inv(self.R_axes)
