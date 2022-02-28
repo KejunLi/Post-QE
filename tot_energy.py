@@ -11,12 +11,25 @@ etot = []
 coord = []
 
 for f in os.listdir(cwd):
-    if f.startswith("relax"):
+    if f.startswith("relax") and not f.endswith("out"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)
         etot.append(qe.final_energy)
         coord.append(qe.atomic_pos_cart)
+    elif f.startswith("relax") and f.endswith("out"):
+        qe = qe_out(os.path.join(cwd, f), show_details=False)
+        # if qe_out exits, the code will stop here
+        f_relax.append(f)
+        etot.append(qe.final_energy)
+        coord.append(qe.atomic_pos_cart)
+    else:
+        pass
+
+if len(f_relax) == 0:
+    print("Only one scf file")
+    print("The total energy is {} eV".format(etot[0]))
+    sys.exit(0)
 
 
 for i in range(len(f_relax)):
