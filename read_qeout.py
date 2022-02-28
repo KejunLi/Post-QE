@@ -387,11 +387,11 @@ class qe_out(object):
 
         for i, line in enumerate(self.lines):
             if "End of self-consistent calculation" in line and num_scf > 0:
+                # try to find the last self-consisten calculation
                 num_scf -= 1
                 continue
             elif num_scf == 0 and "   k =" in line and k_counted < nk_spin:
-                # self.kpts[k_counted, :] = \
-                # np.array(re.findall(r"[+-]?\d+\.\d*", line)).astype(float)
+                # read eigenvalues and occupations at k point
                 temp_E = self.lines[i+2 : i+2+rows]
                 temp_occ = self.lines[i+4+rows : i+4+rows*2]
                 for j in range(rows):
@@ -429,12 +429,6 @@ class qe_out(object):
                 self.occ_up = self.occ[:self.nk, :]
                 self.occ_dn = self.occ[self.nk:, :]
             if self.up_ne == 0 and self.exist_occ:
-                # self.up_ne = np.where(
-                #                 self.occ[0, :] - self.occ[self.nk, :] != 0
-                #                 )[0][-1] + 1
-                # self.dn_ne = np.where(
-                #                 self.occ[0, :] - self.occ[self.nk, :] != 0
-                #                 )[0][0]
                 self.up_ne = int(np.sum(self.occ_up[0, :]))
                 self.dn_ne = int(np.sum(self.occ_dn[0, :]))
                 if self.show_details:
@@ -467,12 +461,12 @@ class qe_out(object):
         ++----------------------------------------------------------------------
         """
         go_cal_bandgap = True
-        if not self.exist_occ:
-            print(
-                "Not able to calculate bandgap because no occupations found. "
-                + "'verbosity=high is required'. Exit."
-            )
-            sys.exit(0) # this will stop the whole running of the program!
+        # if not self.exist_occ:
+        #     print(
+        #         "Not able to calculate bandgap because no occupations found. "
+        #         + "'verbosity=high is required'. Exit."
+        #     )
+        #     sys.exit(0) # this will stop the whole running of the program!
 
         if self.spinpol: # spin polarized
             nk_spin = self.nk * 2
@@ -489,7 +483,7 @@ class qe_out(object):
             if self.nbnd <= self.up_ne or self.nbnd <= self.dn_ne:
                 go_cal_bandgap = False
                 if self.show_details:
-                    print("Stop calculating bandgaps due to no empty bands. Exit.")
+                    print("Stop getting bandgaps due to no empty bands.")
                 sys.exit(0) # this will stop the whole running of the program!
 
             # evaluate the direct and indirect band gaps
@@ -577,7 +571,7 @@ class qe_out(object):
                 if self.nbnd <= self.ne/2:
                     go_cal_bandgap = False
                     if self.show_details:
-                        print("Stop calculating bandgaps due to no empty bands. Exit.")
+                        print("Stop getting bandgaps due to no empty bands.")
                     sys.exit(0) # this will stop the whole running of the program!
 
                 for i in range(self.nk):
@@ -603,7 +597,7 @@ class qe_out(object):
                 if self.nbnd <= self.ne:
                     go_cal_bandgap = False
                     if self.show_details:
-                        print("Stop calculating bandgaps due to no empty bands. Exit.")
+                        print("Stop getting bandgaps due to no empty bands.")
                     sys.exit(0) # this will stop the whole running of the program!
 
                 for i in range(self.nk):
