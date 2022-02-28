@@ -274,8 +274,9 @@ class qe_out(object):
         self.read_atomic_pos()
         self.read_eigenenergies()
         self.read_bandgap()
-        self.read_etot()
         self.read_miscellus()
+        self.read_etot()
+        
 
     def read_etot(self):
         """
@@ -294,6 +295,9 @@ class qe_out(object):
         self.etot = np.zeros(self.scf_cycle) # total energy without exx
         self.exx_etot = np.zeros(self.exx_scf_cycle) # total energy with exx
         self.final_energy = 0
+        if self.scf_cycle == 0:
+            print("A nscf calculation or calculation not done.")
+            sys.exit(0)
         for line in self.lines:
             if "!    total energy" in line:
                 # \d +  # the integral part
