@@ -338,7 +338,7 @@ f_relax = []
 nuclear_coord = []
 
 for f in os.listdir(cwd):
-    if f.startswith("relax") and not f.endswith("out"):
+    if f.startswith("relax") and not f.endswith("out") and not f.endswith("in"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)

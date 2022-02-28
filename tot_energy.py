@@ -11,7 +11,7 @@ etot = []
 coord = []
 
 for f in os.listdir(cwd):
-    if f.startswith("relax") and not f.endswith("out"):
+    if f.startswith("relax") and not f.endswith("out") and not f.endswith("in"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)
@@ -26,7 +26,7 @@ for f in os.listdir(cwd):
     else:
         pass
 
-if len(f_relax) == 0:
+if len(f_relax) == 1:
     print("Only one scf file")
     print("The total energy is {} eV".format(etot[0]))
     sys.exit(0)
