@@ -271,11 +271,11 @@ class qe_out(object):
                 print("Number of electrons: {}".format(str(self.ne)))
         
         # call all the dynamic methods
-        self.read_etot()
         self.read_atomic_pos()
-        #self.read_miscellus()
         self.read_eigenenergies()
-        #self.read_bandgap()
+        self.read_bandgap()
+        self.read_etot()
+        self.read_miscellus()
 
     def read_etot(self):
         """
