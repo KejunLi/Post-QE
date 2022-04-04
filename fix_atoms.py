@@ -95,7 +95,11 @@ if __name__ == "__main__":
     for f in os.listdir(cwd):
         # print(f)
         if f.startswith("relax.out") or f.startswith("scf.out"):
+            print("Read the geometry from qe ouput")
             qe = qe_out(os.path.join(cwd, f))
+        elif f.startswith("relax.in") or f.startswith("scf.in"):
+            print("Read geometry from qe input")
+            qe = qe_in(os.path.join(cwd, f))
         else:
             continue
 
