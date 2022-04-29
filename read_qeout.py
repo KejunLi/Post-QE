@@ -100,7 +100,7 @@ class qe_out(object):
     +   No return
     ++--------------------------------------------------------------------------
     """
-    def __init__(self, path, show_details=True):
+    def __init__(self, path, verbosity=True):
         """
         ++----------------------------------------------------------------------
         +   __init__ method or constructor for initialization
@@ -238,8 +238,8 @@ class qe_out(object):
                 self.exx_scf_cycle += 1
 
 
-        self.show_details = show_details
-        if show_details:
+        self.verbosity = verbosity
+        if verbosity:
             print("----------------Quantum Espresso----------------")
             print("Atomic species: {}".format(self.atomic_species))
             print("Number of atoms: {}".format(str(self.nat)))
@@ -313,7 +313,7 @@ class qe_out(object):
                 )
                 exx_etot_count += 1
             elif "Final" in line:
-                if self.show_details:
+                if self.verbosity:
                     print("Geometry optimization done")
                 final_energy = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
                 self.final_energy = final_energy * Ry2eV
@@ -325,15 +325,15 @@ class qe_out(object):
             else: # hybrid functionals or functionals with vdW_corr
                 if self.xc_functional == "PBE0" or self.xc_functional == "HSE":
                     # if hybrid calculation, and it can converge
-                    if self.show_details:
+                    if self.verbosity:
                         print("Hybrid calculation is not done")
                     self.final_energy = self.exx_etot[-1]
                 else:
                     # if not hybrid, or other functionals do not converge
-                    if self.show_details:
+                    if self.verbosity:
                         print("Calculation is not done or not converged")
                     self.final_energy = self.etot[-1]
-        if self.show_details:
+        if self.verbosity:
             print("Final energy = {} eV".format(self.final_energy))
 
 
@@ -435,7 +435,7 @@ class qe_out(object):
             if self.up_ne == 0 and self.exist_occ:
                 self.up_ne = int(np.sum(self.occ_up[0, :]))
                 self.dn_ne = int(np.sum(self.occ_dn[0, :]))
-                if self.show_details:
+                if self.verbosity:
                     print(
                         "Number of electrons: {} (up: {}, down: {})"
                         .format(str(self.ne), str(self.up_ne), str(self.dn_ne))
@@ -486,7 +486,7 @@ class qe_out(object):
             #     "Need empty bands to get bandgaps"
             if self.nbnd <= self.up_ne or self.nbnd <= self.dn_ne:
                 go_cal_bandgap = False
-                if self.show_details:
+                if self.verbosity:
                     print("Stop getting bandgaps due to no empty bands.")
                 sys.exit(0) # this will stop the whole running of the program!
 
@@ -558,7 +558,7 @@ class qe_out(object):
             else:
                 dir_channel = "both spin-up and spin-down (spin degenerate)"
 
-            if self.show_details:
+            if self.verbosity:
                 print(
                     "The indirect gap is in {} channel.".format(indir_channel)
                 )
@@ -574,7 +574,7 @@ class qe_out(object):
                 # assert self.nbnd > self.ne/2, "Need empty bands to get bandgaps"
                 if self.nbnd <= self.ne/2:
                     go_cal_bandgap = False
-                    if self.show_details:
+                    if self.verbosity:
                         print("Stop getting bandgaps due to no empty bands.")
                     sys.exit(0) # this will stop the whole running of the program!
 
@@ -600,7 +600,7 @@ class qe_out(object):
                 # assert self.nbnd > self.ne, "Need empty bands to get bandgaps"
                 if self.nbnd <= self.ne:
                     go_cal_bandgap = False
-                    if self.show_details:
+                    if self.verbosity:
                         print("Stop getting bandgaps due to no empty bands.")
                     sys.exit(0) # this will stop the whole running of the program!
 
@@ -628,7 +628,7 @@ class qe_out(object):
         k_cbm = self.kpts_cryst_coord[index_k_cbm]
         k_vbm = self.kpts_cryst_coord[index_k_vbm]
         
-        if go_cal_bandgap and self.show_details:
+        if go_cal_bandgap and self.verbosity:
             print(
                 "CBM = {} eV is at No.{} k point: {}"
                 .format(cbm, index_k_cbm+1, k_cbm)
@@ -804,7 +804,7 @@ class qe_out(object):
                     raise ValueError("ATOMIC_POSITIONS are not properly read.")
 
         if not is_geometry_optimized:
-            if self.show_details:
+            if self.verbosity:
                 print("This is a single-point calculation (scf or nscf).")
         
 
@@ -845,7 +845,7 @@ class qe_out(object):
                 self.wall_time += float(time[i+num]) * 60
             else:
                 self.wall_time += float(time[i+num])
-        if self.show_details:
+        if self.verbosity:
             print("Calculation time: {} s".format(self.wall_time))
 
 
@@ -1067,7 +1067,7 @@ class qe_bands(object):
     +   No return
     ++--------------------------------------------------------------------------
     """
-    def __init__(self, path, show_details=True):
+    def __init__(self, path, verbosity=True):
         """
         init method or constructor for initialization
         read information in qe output file like scf.out and relax.out
@@ -1174,8 +1174,8 @@ class qe_bands(object):
             if "SPIN" in line:
                 self.spinpol = True
         
-        self.show_details = show_details
-        if show_details:
+        self.verbosity = verbosity
+        if verbosity:
             print("\rQuantum Espresso bands.x")
             print("Atomic species: {}".format(self.atomic_species))
             print("Number of atoms: {}".format(str(self.nat)))
@@ -1302,7 +1302,7 @@ class read_pdos(object):
     +   No return
     ++--------------------------------------------------------------------------
     """
-    def __init__(self, path, show_details=True):
+    def __init__(self, path, verbosity=True):
         """
         init method or constructor for initialization
         read information in qe post processing output file pdos.out
@@ -1473,7 +1473,7 @@ class read_pdos(object):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    qe = qe_out(cwd, show_details=True)
+    qe = qe_out(cwd, verbosity=True)
 
     if "cart2cryst" in sys.argv:
         dir_f = str(cwd) + "/cnv.txt"

@@ -281,7 +281,7 @@ class strain_and_deform_cell(object):
 if __name__ == "__main__":
     cwd = os.getcwd()
     if sys.argv[1].endswith("out"):
-        qe = qe_out(os.path.join(cwd, sys.argv[1]), show_details=False)
+        qe = qe_out(os.path.join(cwd, sys.argv[1]), verbosity=False)
         sdc = strain_and_deform_cell(
             cell_parameters=qe.cell_parameters, 
             atomic_pos_cryst=qe.atomic_pos_cryst

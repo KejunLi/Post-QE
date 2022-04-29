@@ -49,7 +49,7 @@ class qe_out(object):
     +   No return
     ++--------------------------------------------------------------------------
     """
-    def __init__(self, path, show_details=True):
+    def __init__(self, path, verbosity=True):
         """
         ++----------------------------------------------------------------------
         +   __init__ method or constructor for initialization
@@ -185,8 +185,8 @@ class qe_out(object):
                 self.exx_scf_cycle += 1
 
 
-        self.show_details = show_details
-        if show_details:
+        self.verbosity = verbosity
+        if verbosity:
             print("----------------Quantum Espresso----------------")
             print("Atomic species: {}".format(self.atomic_species))
             print("Number of atoms: {}".format(str(self.nat)))
@@ -321,7 +321,7 @@ class qe_out(object):
                     raise ValueError("ATOMIC_POSITIONS are not properly read.")
 
         if not is_geometry_optimized:
-            if self.show_details:
+            if self.verbosity:
                 print("This is a single-point calculation (scf or nscf).")
         
 
@@ -339,12 +339,12 @@ nuclear_coord = []
 
 for f in os.listdir(cwd):
     if f.startswith("relax") and not f.endswith("out") and not f.endswith("in"):
-        qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
+        qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)
         nuclear_coord.append(qe.atomic_pos_cart)
     elif f.startswith("relax") and f.endswith("out"):
-        qe = qe_out(os.path.join(cwd, f), show_details=False)
+        qe = qe_out(os.path.join(cwd, f), verbosity=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)
         nuclear_coord.append(qe.atomic_pos_cart)

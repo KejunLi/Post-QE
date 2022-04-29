@@ -5,7 +5,7 @@ import sys
 from read_qeout import qe_out
 
 path = os.getcwd()
-qe = qe_out(os.path.join(path, sys.argv[1]), show_details=False)
+qe = qe_out(os.path.join(path, sys.argv[1]), verbosity=False)
 if len(sys.argv) == 2:
     cellpara = qe.cell_parameters
 elif len(sys.argv) == 3:
