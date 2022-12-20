@@ -338,14 +338,24 @@ f_relax = []
 nuclear_coord = []
 
 for f in os.listdir(cwd):
+    # if qe output is in a folder relax*
     if f.startswith("relax") and not f.endswith("out") and not f.endswith("in"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
-        # if qe_out exits, the code will stop here
         f_relax.append(f)
         nuclear_coord.append(qe.atomic_pos_cart)
+    # if qe output is in a folder singlet*
+    elif f.startswith("singlet") and not f.endswith("out") and not f.endswith("in"):
+        qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
+        f_relax.append(f)
+        nuclear_coord.append(qe.atomic_pos_cart)
+    # if qe output is in a folder triplet*
+    elif f.startswith("triplet") and not f.endswith("out") and not f.endswith("in"):
+        qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
+        f_relax.append(f)
+        nuclear_coord.append(qe.atomic_pos_cart)
+    # if qe output is in current folder
     elif f.startswith("relax") and f.endswith("out"):
         qe = qe_out(os.path.join(cwd, f), verbosity=False)
-        # if qe_out exits, the code will stop here
         f_relax.append(f)
         nuclear_coord.append(qe.atomic_pos_cart)
     else:
