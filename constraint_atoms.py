@@ -71,15 +71,15 @@ class cstr_atoms(object):
     ++--------------------------------------------------------------------------
     """
     def __init__(self, atoms=None, cell_parameters=None, atomic_pos_cryst=None):
-        self.atoms = atoms
-        self.cell_parameters = cell_parameters
-        self.atomic_pos_cryst = atomic_pos_cryst
+        self.atoms = np.copy(atoms)
+        self.cell_parameters = np.copy(cell_parameters)
+        self.atomic_pos_cryst = np.copy(atomic_pos_cryst)
         self.atomic_pos_cart = np.matmul(atomic_pos_cryst, cell_parameters)
-        self.nat = atomic_pos_cryst.shape[0]
+        self.nat = np.copy(atomic_pos_cryst.shape[0])
 
         self.atomic_mass = np.zeros(self.nat)
         for i in range(self.nat):
-            self.atomic_mass[i] = self.dict_atomic_mass(atoms[i])
+            self.atomic_mass[i] = np.copy(self.dict_atomic_mass(atoms[i]))
         
         self.magic_cube()
         self.multi_images()
@@ -179,7 +179,7 @@ class cstr_atoms(object):
                     ] = self.atomic_pos_cart + i * a + j * b + k * c
                     self.images_mass[
                         line_num * self.nat:(line_num + 1) * self.nat
-                    ] = self.atomic_mass
+                    ] = np.copy(self.atomic_mass)
 
 
     def sphere(self, center=[0, 0, 0], radius=0):
@@ -216,7 +216,7 @@ class cstr_atoms(object):
                             # allow atom l to move
                             self.isfree[l] = True
                             # replace He in the sphere with original atoms
-                            self.fake_atoms[l] = self.atoms[l]
+                            self.fake_atoms[l] = np.copy(self.atoms[l])
                         else:
                             # constain atoms and
                             # decrease the weight of constraint atoms
@@ -239,7 +239,7 @@ class cstr_atoms(object):
             else:
                 # constain atoms and decrease the weight of constraint atoms
                 self.atomic_mass[i] /=2
-                self.if_pos[i, :] = zero_force
+                self.if_pos[i, :] = np.copy(zero_force)
         self.atomic_pos_cryst_if_pos = np.concatenate(
             (self.atomic_pos_cryst, self.if_pos), axis=1
         )
@@ -278,7 +278,7 @@ class cstr_atoms(object):
             "Tl": 204.38, "Pb": 207.2, "Bi": 208.98, "Po": 209,
             "At": 210, "Rn": 222
         }
-        mass = dict_atomic_mass.get(element)
+        mass = np.copy(dict_atomic_mass.get(element))
         return mass
 
 
