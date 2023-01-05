@@ -138,7 +138,7 @@ class cstr_atoms(object):
         self.cubes_mass = np.zeros((3, 3, 3, self.nat))
         self.cubes_atoms = np.zeros((3, 3, 3, self.nat), dtype="U4")
 
-        inv_cell_parameters = np.linalg.inv(self.cell_parameters)
+        self.inv_cell_parameters = np.linalg.inv(self.cell_parameters)
 
         x = [-1, 0, 1]
         y = np.copy(x)
@@ -150,7 +150,7 @@ class cstr_atoms(object):
                         self.atomic_pos_cart + a * xval + b * yval + c * zval
                     )
                     self.cubes_atomic_pos_cryst[i, j, k, :, :] = np.matmul(
-                        self.cubes_atomic_pos_cart[i, j, k, :, :], inv_cell_parameters
+                        self.cubes_atomic_pos_cart[i, j, k, :, :], self.inv_cell_parameters
                     )
                     self.cubes_mass[i, j, k, :] = np.copy(self.atomic_mass)
                     self.cubes_atoms[i, j, k, :] = np.copy(self.atoms)
@@ -307,8 +307,16 @@ class cstr_atoms(object):
         is_in_sphere_and_at_boundary = np.full((3, 3, 3, self.nat), True) # value true
         is_outsite_sphere_and_at_boundary = np.full((3, 3, 3, self.nat), True) # value true
         is_atom_to_keep = np.full((3, 3, 3, self.nat), True) # value true
-        # replace the delected atoms with H for passivation
-        self.new_atoms = np.full((3, 3, 3, self.nat), "H")
+        
+
+        # initialize new cubes of size 3x3x3 to save the new supercell with passivation H atoms
+        # meanings of array indices in order:
+        # block indices: i, j, k; atom_i; atomic_pos_cryst: x, y, z
+        # self.cubes store the atomic positions in cartesian coorciate
+        new_cubes_atomic_pos_cart = np.copy(self.cubes_atomic_pos_cart)
+        new_cubes_atomic_pos_cryst = np.copy(self.cubes_atomic_pos_cryst)
+        # the array below will save the atoms in the scope and the passivation H atoms replacing the delected atoms
+        new_cubes_atoms = np.full((3, 3, 3, self.nat), "H")
 
         # atoms in the block (i, j, k)
         for i in range(3):
@@ -334,7 +342,7 @@ class cstr_atoms(object):
                     for l in range(self.nat):
                         # check if the l-th atom is in the sphere. If so, replace H in the sphere with original atoms
                         if is_in_sphere[i, j, k, l] == True:
-                            self.new_atoms[i, j, k, l] = np.copy(self.cubes_atoms[i, j, k, l])
+                            new_cubes_atoms[i, j, k, l] = np.copy(self.cubes_atoms[i, j, k, l])
                         for m in range(self.nat):
                             # check if the l-th atom is in the sphere and at the boundary
                             # check if the m-th atom is outsite the sphere and at the boundary
@@ -352,18 +360,20 @@ class cstr_atoms(object):
                                 if dist_between_two_atoms < 1.7:
                                     # if so, change the atomis positions of the atom outsite the sphere
                                     # and at the boundary along the direction into which the original bond points
-                                    self.cubes_atomic_pos_cart[i, j, k, m] = (
+                                    new_cubes_atomic_pos_cart[i, j, k, m] = (
                                         self.cubes_atomic_pos_cart[i, j, k, l] + unit_vec * H_bond_length
                                     )
+                    new_cubes_atomic_pos_cryst[i, j, k, :, :] = np.matmul(
+                        new_cubes_atomic_pos_cart[i, j, k, :, :], self.inv_cell_parameters
+                    )
         
         # reshape the array to be 2D to make it convenient to plot
-        all_atomic_pos_cart = self.cubes_atomic_pos_cart.reshape(27*self.nat, 3)
-        all_atomic_pos_cryst = self.cubes_atomic_pos_cryst.reshape(
+        all_atomic_pos_cart = new_cubes_atomic_pos_cart.reshape(27*self.nat, 3)
+        all_atomic_pos_cryst = new_cubes_atomic_pos_cryst.reshape(
             27*self.nat, 3
         )
-        all_mass = self.cubes_mass.reshape(27*self.nat)
-        all_atoms = self.new_atoms.reshape(27*self.nat)
-        return(all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart, all_mass)
+        all_atoms = new_cubes_atoms.reshape(27*self.nat)
+        return(all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart)
 
 def write_vis_cstr_atoms_xsf(cryst_axes, atoms, atomic_pos, cwd):
     """
@@ -401,8 +411,8 @@ if __name__ == "__main__":
         cell_parameters=qe.cell_parameters,
         atomic_pos_cryst=qe.atomic_pos_cryst
     )
-    all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart, all_mass = ca.trim_supercell(
-        center=np.array([0, 0, 0]),
+    all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart = ca.trim_supercell(
+        center=np.array([12.587, 1.69896, 12.587]),
         radius=5,
         H_bond_length=1.07
     )
