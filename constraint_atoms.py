@@ -302,6 +302,9 @@ class cstr_atoms(object):
         +   self.is_free is the judgement for whether atoms are free to move
         ++----------------------------------------------------------------------
         """
+        # common bond length for justifying the nearest neighbor atoms
+        common_bond_leng = 1.7 # Angstrom
+
         # initialization
         is_in_sphere = np.full((3, 3, 3, self.nat), True) # value true
         is_in_sphere_and_at_boundary = np.full((3, 3, 3, self.nat), True) # value true
@@ -331,12 +334,12 @@ class cstr_atoms(object):
                     # assign true if the difference between distance and radius is smaller than 0 
                     # and larger than a usual bond length
                     is_in_sphere_and_at_boundary[i, j, k, :] = (
-                        ((dist - radius) <= 0.0) & ((dist - radius) > -1.7)
+                        ((dist - radius) <= 0.0) & ((dist - radius) > -common_bond_leng)
                     )
                     # assign true if the difference between distance and radius is larger than 0 
                     # and smaller than a usual bond length
                     is_outsite_sphere_and_at_boundary[i, j, k, :] = (
-                        ((dist - radius) > 0.0) & ((dist - radius) < 1.7)
+                        ((dist - radius) > 0.0) & ((dist - radius) < common_bond_leng)
                     )
                     is_atom_to_keep[i, j, k, :] = (is_in_sphere | is_outsite_sphere_and_at_boundary)[i, j, k, :]
                     for l in range(self.nat):
@@ -357,7 +360,7 @@ class cstr_atoms(object):
                                 )
                                 dist_between_two_atoms = np.linalg.norm(displ_between_two_atoms)
                                 unit_vec = -displ_between_two_atoms/dist_between_two_atoms
-                                if dist_between_two_atoms < 1.7:
+                                if dist_between_two_atoms < common_bond_leng:
                                     # if so, change the atomis positions of the atom outsite the sphere
                                     # and at the boundary along the direction into which the original bond points
                                     new_cubes_atomic_pos_cart[i, j, k, m] = (
