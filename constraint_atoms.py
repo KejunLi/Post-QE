@@ -27,8 +27,10 @@ class cstr_atoms(object):
     +   Input: none
     +
     +   Attributes:
-    +   self.cubes (a cube is an image of the supercell, containing atomic
-    +   positions in cartesian coordinates)
+    +   self.cubes_atomic_pos_cart (a cube is an image of the supercell, containing 
+    +   atomic positions in cartesian coordinates)
+    +   self.cubes_atomic_pos_cryst (a cube is an image of the supercell, containing 
+    +   atomic positions in cystal coordinates)
     +   self.cubes_mass (corresponding atomic mass in cubes)
     +   self.cubes_atoms (atomic species in cubes)
     +
@@ -68,6 +70,11 @@ class cstr_atoms(object):
     +   the arraies of self.atoms and self.atomic_pos_cryst_if_pos)
     +
     +   No return
+    ++--------------------------------------------------------------------------
+    +   6. Method dict_atomic_mass(self, element=None)
+    +   self.dict_Atomic_mass (the dictionary of atomic mass of all common elements)
+    +
+    +   return mass
     ++--------------------------------------------------------------------------
     """
     def __init__(self, atoms=None, cell_parameters=None, atomic_pos_cryst=None):
