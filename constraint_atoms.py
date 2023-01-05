@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import numpy as np
-import sys
 import os
 
 
@@ -228,7 +227,6 @@ class cstr_atoms(object):
                             # constain atoms and
                             # decrease the weight of constraint atoms
                             self.cubes_mass[i, j, k, l] /=2
-                            
 
         
     def cstr_atoms(self):
@@ -253,6 +251,7 @@ class cstr_atoms(object):
         self.atoms_atomic_pos_cryst_if_pos = np.column_stack(
             (self.atoms, self.atomic_pos_cryst_if_pos)
         )
+
 
     def dict_atomic_mass(self, element=None):
         """
@@ -289,5 +288,127 @@ class cstr_atoms(object):
         return mass
 
 
+    def trim_supercell(self, center=[0, 0, 0], radius=0, H_bond_length=1.07):
+        """
+        ++----------------------------------------------------------------------
+        +   This method should be called after self.magic_cube(self)
+        +
+        +   It trims a supercell by removing all the atoms outsite of the sphere
+        +   of input radius at the input center. In addition, the atoms at boundary
+        +   are passivated by H atoms, and the H bond length is changed to 1.07 A 
+        +   along the direction into which the original bond of the boundary atom points
+        +
+        +   periodic images are taken into consideration
+        +   self.is_free is the judgement for whether atoms are free to move
+        ++----------------------------------------------------------------------
+        """
+        # initialization
+        is_in_sphere = np.full((3, 3, 3, self.nat), True) # value true
+        is_in_sphere_and_at_boundary = np.full((3, 3, 3, self.nat), True) # value true
+        is_outsite_sphere_and_at_boundary = np.full((3, 3, 3, self.nat), True) # value true
+        is_atom_to_keep = np.full((3, 3, 3, self.nat), True) # value true
+        # replace the delected atoms with H for passivation
+        self.new_atoms = np.full((3, 3, 3, self.nat), "H")
+
+        # atoms in the block (i, j, k)
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    # displacement of the atoms in block ijk to the defined center
+                    displ = self.cubes_atomic_pos_cart[i, j, k, :, :] - center
+                    # distance to the center
+                    dist = np.linalg.norm(displ, axis=1)
+                    # assign true if distance is smaller than the radius
+                    is_in_sphere[i, j, k, :] = (dist < radius)
+                    # assign true if the difference between distance and radius is smaller than 0 
+                    # and larger than a usual bond length
+                    is_in_sphere_and_at_boundary[i, j, k, :] = (
+                        ((dist - radius) <= 0.0) & ((dist - radius) > -1.7)
+                    )
+                    # assign true if the difference between distance and radius is larger than 0 
+                    # and smaller than a usual bond length
+                    is_outsite_sphere_and_at_boundary[i, j, k, :] = (
+                        ((dist - radius) > 0.0) & ((dist - radius) < 1.7)
+                    )
+                    is_atom_to_keep[i, j, k, :] = (is_in_sphere | is_outsite_sphere_and_at_boundary)[i, j, k, :]
+                    for l in range(self.nat):
+                        # check if the l-th atom is in the sphere. If so, replace H in the sphere with original atoms
+                        if is_in_sphere[i, j, k, l] == True:
+                            self.new_atoms[i, j, k, l] = np.copy(self.cubes_atoms[i, j, k, l])
+                        for m in range(self.nat):
+                            # check if the l-th atom is in the sphere and at the boundary
+                            # check if the m-th atom is outsite the sphere and at the boundary
+                            if (
+                                is_in_sphere_and_at_boundary[i, j, k, l] == True 
+                                and 
+                                is_outsite_sphere_and_at_boundary[i, j, k, m] == True
+                            ):
+                                # if so, check if l-th atom and m-th atom are the nearest neighbors
+                                displ_between_two_atoms = (
+                                    self.cubes_atomic_pos_cart[i, j, k, l] - self.cubes_atomic_pos_cart[i, j, k, m]
+                                )
+                                dist_between_two_atoms = np.linalg.norm(displ_between_two_atoms)
+                                unit_vec = -displ_between_two_atoms/dist_between_two_atoms
+                                if dist_between_two_atoms < 1.7:
+                                    # if so, change the atomis positions of the atom outsite the sphere
+                                    # and at the boundary along the direction into which the original bond points
+                                    self.cubes_atomic_pos_cart[i, j, k, m] = (
+                                        self.cubes_atomic_pos_cart[i, j, k, l] + unit_vec * H_bond_length
+                                    )
+        
+        # reshape the array to be 2D to make it convenient to plot
+        all_atomic_pos_cart = self.cubes_atomic_pos_cart.reshape(27*self.nat, 3)
+        all_atomic_pos_cryst = self.cubes_atomic_pos_cryst.reshape(
+            27*self.nat, 3
+        )
+        all_mass = self.cubes_mass.reshape(27*self.nat)
+        all_atoms = self.new_atoms.reshape(27*self.nat)
+        return(all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart, all_mass)
+
+def write_vis_cstr_atoms_xsf(cryst_axes, atoms, atomic_pos, cwd):
+    """
+    =---------------------------------------------------------------------------
+    +   This function writes the atoms and atomic positions for visualizing
+    +   the fixing range by VESTA
+    +
+    +   type(input): <class 'numpy.ndarray'>
+    +   cryst_axes (crystal axes in cartesian coordinates, angstrom)
+    +   atoms (atomic species associated with each atomic position)
+    +   atomic_pos (atomic positions)
+    =---------------------------------------------------------------------------
+    """
+    # write a file that can be open by vesta
+    atoms_ap_cart_coord = np.column_stack((atoms, atomic_pos))
+    nat = atoms.shape[0]
+    outfile = open(os.path.join(cwd, "vis_cstr_atoms.xsf"), "w")
+    outfile = open(os.path.join(cwd, "vis_cstr_atoms.xsf"), "a")
+    outfile.write("CRYSTAL\n")
+    outfile.write("PRIMVEC\n")
+    np.savetxt(outfile, cryst_axes, "%.10f")
+    outfile.write("PRIMCOORD\n")
+    outfile.write(str(nat) + "  1\n")
+    np.savetxt(outfile, atoms_ap_cart_coord, "%s")
+    outfile.close()
+
 if __name__ == "__main__":
     print(u"\u2642?????")
+    cwd = os.getcwd()
+
+    from read_qeout import qe_out
+    qe = qe_out(os.path.join(cwd, "relax.out"), verbosity=False)
+    ca = cstr_atoms(
+        atoms=qe.atoms, 
+        cell_parameters=qe.cell_parameters,
+        atomic_pos_cryst=qe.atomic_pos_cryst
+    )
+    all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart, all_mass = ca.trim_supercell(
+        center=np.array([0, 0, 0]),
+        radius=5,
+        H_bond_length=1.07
+    )
+    write_vis_cstr_atoms_xsf(
+        cryst_axes=qe.cell_parameters*3,
+        atoms=all_atoms,
+        atomic_pos=all_atomic_pos_cart,
+        cwd=cwd
+    )
