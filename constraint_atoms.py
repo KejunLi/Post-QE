@@ -52,7 +52,7 @@ class cstr_atoms(object):
     +   radius (radius of the spherical range within which atoms are not fixed)
     +
     +   Attributes:
-    +   self.isfree (boolean values, determine if atoms are free to move)
+    +   self.is_free (boolean values, determine if atoms are free to move)
     +   self.fake_atoms (an array of atoms of which are He beyond the sphere)
     +
     +   No return
@@ -197,12 +197,12 @@ class cstr_atoms(object):
         +   atoms in the sphere(center, radius) will be free
         +   atoms out of the sphere(center, radius) will be fixed
         +   periodic images are taken into consideration
-        +   self.isfree is the judgement for whether atoms are free to move
+        +   self.is_free is the judgement for whether atoms are free to move
         ++----------------------------------------------------------------------
         """
         # initialization
-        isinsphere = np.full((3, 3, 3, self.nat), True) # value true
-        self.isfree = np.full(self.nat, False) # value true
+        is_in_sphere = np.full((3, 3, 3, self.nat), True) # value true
+        self.is_free = np.full(self.nat, False) # value true
         # fake array of atoms with all atoms to be He
         self.fake_atoms = np.full(self.nat, "He")
 
@@ -215,13 +215,13 @@ class cstr_atoms(object):
                     # distance to the center
                     dist = np.linalg.norm(displ, axis=1)
                     # assign true if distance is smaller than defined radius
-                    isinsphere[i, j, k, :] = (dist < radius)
+                    is_in_sphere[i, j, k, :] = (dist < radius)
                     for l in range(self.nat):
                         # check the l-th atom in the unitcell, if the l-th atom is allowed to move
                         # in other periodic image ijk, it is set to be allowed to move in the unitcell
-                        if isinsphere[i, j, k, l] == True:
+                        if is_in_sphere[i, j, k, l] == True:
                             # allow atom l to move
-                            self.isfree[l] = True
+                            self.is_free[l] = True
                             # replace He in the sphere with original atoms
                             self.fake_atoms[l] = np.copy(self.atoms[l])
                         else:
@@ -241,7 +241,7 @@ class cstr_atoms(object):
         self.if_pos = np.full((self.nat, 3), 1)
         zero_force = np.zeros((1, 3))
         for i in range(self.nat):
-            if self.isfree[i]:
+            if self.is_free[i]:
                 pass
             else:
                 # constain atoms and decrease the weight of constraint atoms
