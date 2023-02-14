@@ -27,12 +27,12 @@ class write_files(object):
         file_to_write.write("CRYSTAL\n")
         file_to_write.write("PRIMVEC\n")
         for i in range(3):
-            file_to_write.write("{:.10f}  {:.10f}  {:.10f}".format(cryst_axes[i][0], cryst_axes[i][1], cryst_axes[i][2]))
+            file_to_write.write("{:.15f}  {:.15f}  {:.15f}\n".format(cryst_axes[i][0], cryst_axes[i][1], cryst_axes[i][2]))
         file_to_write.write("PRIMCOORD\n")
         file_to_write.write(str(nat) + "  1\n")
         for i in range(nat):
             file_to_write.write(
-                "{}    {:.10f}  {:.10f}  {:.10f}".format(
+                "{}    {:.15f}  {:.15f}  {:.15f}\n".format(
                     atoms[i], atomic_pos_cart[i][0], atomic_pos_cart[i][1], atomic_pos_cart[i][2]
                 )
             )
@@ -51,13 +51,13 @@ class write_files(object):
         =---------------------------------------------------------------------------
         """
         nat = len(atoms)
-        print("Write to file:", os.path.join(self.cwd, self.filename))
-        file_to_write = open(os.path.join(self.cwd, self.filename), "w")
-        file_to_write = open(os.path.join(self.cwd, self.filename), "a")
+        print("Write to file:", os.path.join(self.cwd, "{}.xyz".format(self.filename)))
+        file_to_write = open(os.path.join(self.cwd, "{}.xyz".format(self.filename)), "w")
+        file_to_write = open(os.path.join(self.cwd, "{}.xyz".format(self.filename)), "a")
         file_to_write.write(str(nat) + "\n\n")
         for i in range(nat):
             file_to_write.write(
-                "{}    {:.10f}  {:.10f}  {:.10f}".format(
+                "{}    {:.15f}  {:.15f}  {:.15f}\n".format(
                     atoms[i], atomic_pos_cart[i][0], atomic_pos_cart[i][1], atomic_pos_cart[i][2]
                 )
             )
