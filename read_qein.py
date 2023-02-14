@@ -89,6 +89,23 @@ class qe_in(object):
                         )
                 else:
                     pass
+        elif self.ibrav == 1: # structure is cubic
+            # the part of code assumes that celldm(1) appears before celldm(2) 
+            # and celldm(3),
+            # and assume that a shows up before b and c
+            for i, line in enumerate(self.lines):
+                if "celldm(1)" in line:
+                    celldm1 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
+                    a = celldm1 * Bohr2Ang
+                elif (
+                    re.match("a", line.strip()) 
+                    and not re.search(r"[b-zB-Z]", line.strip())
+                ):
+                    a = float(re.findall(r"[+-]?\d+\.\d*", line)[0])
+
+            self.cell_parameters[0, 0] = a
+            self.cell_parameters[1, 1] = a
+            self.cell_parameters[2, 2] = a
         elif self.ibrav == 4: # structure is hexagonal or trigonal
             # the part of code assumes that celldm(1) shows up before celldm(3)
             # and assume that a shows up before c
