@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import os
+from write_files import write_files
 
 
 class cstr_atoms(object):
@@ -385,31 +386,6 @@ class cstr_atoms(object):
         self.trim_cell_atomic_pos_cryst = np.matmul(set_atomic_pos_cart, self.inv_cell_parameters)
     
 
-def write_vis_cstr_atoms_xsf(cryst_axes, atoms, atomic_pos, cwd):
-    """
-    =---------------------------------------------------------------------------
-    +   This function writes the atoms and atomic positions for visualizing
-    +   the fixing range by VESTA
-    +
-    +   type(input): <class 'numpy.ndarray'>
-    +   cryst_axes (crystal axes in cartesian coordinates, angstrom)
-    +   atoms (atomic species associated with each atomic position)
-    +   atomic_pos (atomic positions)
-    =---------------------------------------------------------------------------
-    """
-    # write a file that can be open by vesta
-    atoms_ap_cart_coord = np.column_stack((atoms, atomic_pos))
-    nat = atoms.shape[0]
-    outfile = open(os.path.join(cwd, "vis_cstr_atoms.xsf"), "w")
-    outfile = open(os.path.join(cwd, "vis_cstr_atoms.xsf"), "a")
-    outfile.write("CRYSTAL\n")
-    outfile.write("PRIMVEC\n")
-    np.savetxt(outfile, cryst_axes, "%.10f")
-    outfile.write("PRIMCOORD\n")
-    outfile.write(str(nat) + "  1\n")
-    np.savetxt(outfile, atoms_ap_cart_coord, "%s")
-    outfile.close()
-
 
 
 
@@ -425,13 +401,10 @@ if __name__ == "__main__":
     
     ca.trim_cell(
         center=np.array([0.577262365, 0.577262365, 0.577262365])*10.71447642,
-        radius=4.8,
+        radius=3.4,
         H_bond_length=1.07
     )
 
-    write_vis_cstr_atoms_xsf(
-        cryst_axes=qe.cell_parameters,
-        atoms=ca.trim_cell_atoms,
-        atomic_pos=ca.trim_cell_atomic_pos_cart,
-        cwd=cwd
-    )
+    wf = write_files("nv_center")
+    wf.write_xyz(atoms=ca.trim_cell_atoms, atomic_pos_cart=ca.trim_cell_atomic_pos_cart)
+
