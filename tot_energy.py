@@ -12,13 +12,19 @@ coord = []
 
 for f in os.listdir(cwd):
     if f.startswith("relax") and not f.endswith("out") and not f.endswith("in"):
-        qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
+        qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)
         etot.append(qe.final_energy)
         coord.append(qe.atomic_pos_cart)
     elif f.startswith("relax") and f.endswith("out"):
-        qe = qe_out(os.path.join(cwd, f), verbosity=False)
+        qe = qe_out(os.path.join(cwd, f), show_details=False)
+        # if qe_out exits, the code will stop here
+        f_relax.append(f)
+        etot.append(qe.final_energy)
+        coord.append(qe.atomic_pos_cart)
+    elif f.startswith("singlet") or f.startswith("triplet"):
+        qe = qe_out(os.path.join(cwd, f, "relax.out"), show_details=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)
         etot.append(qe.final_energy)
