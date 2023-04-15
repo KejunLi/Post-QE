@@ -80,7 +80,7 @@ class qe_in(object):
         Bohr = 5.29177210903e-11 # unit m
         Bohr2Ang = Bohr/1e-10
 
-        if self.ibrav == 0: # structure is free
+        if self.ibrav == 0: # crystal system is any
             for i, line in enumerate(self.lines):
                 if "CELL_PARAMETERS" in line:
                     for j in range(3):
@@ -89,10 +89,7 @@ class qe_in(object):
                         )
                 else:
                     pass
-        elif self.ibrav == 1: # structure is cubic
-            # the part of code assumes that celldm(1) appears before celldm(2) 
-            # and celldm(3),
-            # and assume that a shows up before b and c
+        elif self.ibrav == 1: # crystal system is cubic
             for i, line in enumerate(self.lines):
                 if "celldm(1)" in line:
                     celldm1 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
@@ -106,7 +103,7 @@ class qe_in(object):
             self.cell_parameters[0, 0] = a
             self.cell_parameters[1, 1] = a
             self.cell_parameters[2, 2] = a
-        elif self.ibrav == 4: # structure is hexagonal or trigonal
+        elif self.ibrav == 4: # crystal system is hexagonal or trigonal
             # the part of code assumes that celldm(1) shows up before celldm(3)
             # and assume that a shows up before c
             for i, line in enumerate(self.lines):
@@ -132,10 +129,10 @@ class qe_in(object):
             self.cell_parameters[1, 1] = a * np.cos(np.pi/6)
             self.cell_parameters[2, 2] = c
 
-        elif self.ibrav == 8: # structure is orthorhombic
+        elif self.ibrav == 8: # crystal system is orthorhombic
             # the part of code assumes that celldm(1) appears before celldm(2) 
-            # and celldm(3),
-            # and assume that a shows up before b and c
+            # and celldm(3) in different lines,
+            # and assume that a shows up before b and c in different lines
             for i, line in enumerate(self.lines):
                 if "celldm(1)" in line:
                     celldm1 = float(re.findall(r"\d+\.\d*|\d+", line)[1])
