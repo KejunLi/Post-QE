@@ -1,0 +1,23 @@
+################################ Note ################################
+# Read inp_f qe input "scf.in" or output "scf.out"
+# This center is at the middle between N and C along the C3 axis
+# Rotate the geometry for twice
+# The first rotation: align rot1_vec1 to rot1_vec2
+# The second rotation:
+#     (1) take the vector V determined by the positions of atom1 and atom2
+#     (2) only consider V in x-y plane by projecting V onto rot2_vec1
+#     (3) rotate Vxy to rot2_vec2, i.e. rotate the geometry along z-axis
+######################################################################
+
+inp_f: "scf.in"
+center: [6.17999027876447, 6.17999027876447, 6.17999027876447] # unit: angstrom
+radius: 3.8 # unit: angstrom
+CH_bond_length: 1.09 # unit: angstrom
+rot1_vec1: [1, 1, 1]
+rot1_vec2: [0, 0, 1]
+index_atom1: 24
+index_atom2: 33
+rot2_vec1: [1, 1, 0]
+rot2_vec2: [1, 0, 0]
+
+

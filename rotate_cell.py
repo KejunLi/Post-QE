@@ -1,149 +1,67 @@
 #!/usr/bin/env python3
 import numpy as np
-import sys
 import os
-from read_qeout import qe_out
+import yaml
 from read_qein import qe_in
-import argparse
 from read_xsf_xyz import read_xsf_xyz
+from rotation_matrix import rotation_matrix
+from write_files import write_files
+from constraint_atoms import cstr_atoms
 
-
-def rotation_mat(alpha, beta, gamma):
-    """
-    input rotation angles in degree (alpha in z, beta in y, gamma in x)
-    """
-    # rotation in x
-    gamma = gamma / 180.0 * np.pi # convert to radian from degree
-
-    rotation_x = np.matrix(
-        [
-            [1, 0, 0], 
-            [0, np.cos(gamma), -np.sin(gamma)],
-            [0, np.sin(gamma), np.cos(gamma)]
-        ]
-    )
-
-    # rotation in y
-    beta = beta / 180.0 * np.pi # convert to radian from degree
-
-    rotation_y = np.matrix(
-        [
-            [np.cos(beta), 0, np.sin(beta)], 
-            [0, 1, 0],
-            [-np.sin(beta), 0, np.cos(beta)]
-        ]
-    )
-
-    # rotation in z
-    alpha = alpha / 180.0 * np.pi # convert to radian from degree
-
-    rotation_z = np.matrix(
-        [
-            [np.cos(alpha), -np.sin(alpha), 0], 
-            [np.sin(alpha), np.cos(alpha), 0],
-            [0, 0, 1]
-        ]
-    )
-
-    rot = np.matmul(rotation_y, rotation_x)
-    rot = np.matmul(rotation_z, rot)
-    return rot
-
-def write_xsf(
-    cell_parameters, atoms, atomic_pos_cryst, outfile="after_rotation.xsf"
-):
-    """
-    =---------------------------------------------------------------------------
-    +   This function writes the atoms and atomic positions for visualizing
-    +   the fixing range by VESTA
-    +
-    +   type(input): <class 'numpy.ndarray'>
-    +   cell_parameters (cell parameters in cartesian coordinates, angstrom)
-    +   atoms (atomic species associated with each atomic position)
-    +   atomic_pos_cryst (atomic positions)
-    =---------------------------------------------------------------------------
-    """
-    # write a file that can be open by vesta
-    atomic_pos_cart = np.matmul(atomic_pos_cryst, cell_parameters)
-    atoms_atomic_pos_cart = np.column_stack((atoms, atomic_pos_cart))
-    nat = len(atoms)
-    path = os.path.join(os.getcwd(), outfile)
-    outfile = open(path, "w")
-    outfile = open(path, "a")
-    outfile.write("CRYSTAL\n")
-    outfile.write("PRIMVEC\n")
-    np.savetxt(outfile, cell_parameters, "%.10f")
-    outfile.write("PRIMCOORD\n")
-    outfile.write(str(nat) + "  1\n")
-    np.savetxt(outfile, atoms_atomic_pos_cart, "%s")
-    outfile.close()
-
-
-def write_xyz(atoms, atomic_pos_cart, outfile="after_rotation.xyz"):
-    """
-    =---------------------------------------------------------------------------
-    +   This function writes the atoms and atomic positions for visualizing
-    +   the fixing range by VESTA
-    +
-    +   type(input): <class 'numpy.ndarray'>
-    +   atoms (atomic species associated with each atomic position)
-    +   atomic_pos_cart (atomic positions)
-    =---------------------------------------------------------------------------
-    """
-    atoms_atomic_pos_cart = np.column_stack((xyz.atoms, atomic_pos_cart))
-    nat = len(atoms)
-    path = os.path.join(os.getcwd(), outfile)
-    print("Write to file:", path)
-    outfile = open(path, "w")
-    outfile = open(path, "a")
-    outfile.write(str(nat) + "\n\n")
-    np.savetxt(outfile, atoms_atomic_pos_cart, "%s")
-    outfile.close()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-    description="Rotate cell"
-    )
-    parser.add_argument(
-        "alpha", type=float, nargs="?", default=0.0, help='rotation w.r.t. x'
-    )
-    parser.add_argument(
-        "beta", type=float, nargs="?", default=0.0, help='rotation w.r.t. y'
-    )
-    parser.add_argument(
-        "gamma", type=float, nargs="?", default=0.0, help='rotation w.r.t. z'
-    )
-    args = parser.parse_args()
-    alpha_x = args.alpha
-    beta_y = args.beta
-    gamma_z = args.gamma
-
     cwd = os.getcwd()
-    for f in os.listdir(cwd):
-        if f == "scf.in" or f == "relax.in":
-            qe = qe_in(os.path.join(cwd, f))
-            rotation_mat = rotation_mat(
-                alpha=alpha_x, beta=beta_y, gamma=gamma_z
-            )
-            inv_rotation_mat = np.linalg.inv(rotation_mat)
-            # to rotate a supercell, one only needs to rotate the cell parameters
-            cell_parameters = np.matmul(qe.cell_parameters, inv_rotation_mat)
+    inp_yaml = open(os.path.join(cwd, "inp_rotation.yaml"), "r")
+    inp = yaml.load(inp_yaml, Loader=yaml.FullLoader)
+    
+    if ".in" in inp["inp_f"]:
+        qe = qe_in(os.path.join(cwd, inp["inp_f"]))
+    elif ".out" in inp["inp_f"]:
+        qe = qe_out(os.path.join(cwd, inp["inp_f"]))
+    else:
+        raise ValueError("QE input or QE output not found")
 
-            write_xsf(
-                cell_parameters=cell_parameters, 
-                atoms=qe.atoms, 
-                atomic_pos_cryst=qe.atomic_pos_cryst,
-                outfile="after_rotation.xsf"
-            )
-        elif f.endswith(".xyz") and not f.startswith("after"):
+    ca = cstr_atoms(
+        atoms=qe.atoms, 
+        cell_parameters=qe.cell_parameters,
+        atomic_pos_cryst=qe.atomic_pos_cryst
+    )
+    
+    ca.trim_cell(
+        center = inp["center"],
+        radius=inp["radius"],
+        H_bond_length=inp["CH_bond_length"]
+    )
+
+    wf = write_files("nv_cluster")
+    wf.write_xyz(atoms=ca.trim_cell_atoms, atomic_pos_cart=ca.trim_cell_atomic_pos_cart)
+
+
+    
+    R = rotation_matrix()
+
+    for f in os.listdir(cwd):
+        if f.endswith(".xyz"):
+            #### rotate cluster to align [111] to [001]
             xyz = read_xsf_xyz(os.path.join(cwd, f))
             print("Read file: ", os.path.join(cwd, f))
-            rotation_mat = rotation_mat(
-                alpha=alpha_x, beta=beta_y, gamma=gamma_z
-            )
-            inv_rotation_mat = np.linalg.inv(rotation_mat)
+            R.rotation_matrix_rodrigues(inp["rot1_vec1"], inp["rot1_vec2"])
+            inv_rotation_mat = np.linalg.inv(R.rot_mat_rodrigues)
             # rotate the atomic positions of a molecule in cartesian coordinate
             atomic_pos_cart = np.matmul(xyz.atomic_pos_cart, inv_rotation_mat)
+            wf.write_xyz(atoms=xyz.atoms, atomic_pos_cart=atomic_pos_cart)
 
-            write_xyz(atoms=xyz.atoms, atomic_pos_cart=atomic_pos_cart)
+            #### After the first rotation
+            os.system("mv nv_cluster.xyz 1st_rotation.xyz")
+            xyz = read_xsf_xyz(os.path.join(cwd, "1st_rotation.xyz"))
+
+            R.rotation_matrix_rodrigues(
+                vec1=(xyz.atomic_pos_cart[inp["index_atom1"]]-xyz.atomic_pos_cart[inp["index_atom2"]]) * inp["rot2_vec1"], 
+                vec2=inp["rot2_vec2"]
+            )
+
+            inv_rotation_mat = np.linalg.inv(R.rot_mat_rodrigues)
+            atomic_pos_cart = np.matmul(xyz.atomic_pos_cart, inv_rotation_mat)
+            wf.write_xyz(atoms=xyz.atoms, atomic_pos_cart=atomic_pos_cart)
+            os.system("rm 1st_rotation.xyz")
