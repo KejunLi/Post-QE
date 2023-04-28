@@ -1,0 +1,10 @@
+################################ Note ################################
+# Read inp_f qe input "scf.in" or output "scf.out"
+# Rotate the cell by 120 degrees
+# The rotation: align rot1_vec1 to rot1_vec2
+######################################################################
+
+inp_f: "relax.in"
+rot1_vec1: [-1, -1, 2]
+rot1_vec2: [-1, 2, -1]
+
