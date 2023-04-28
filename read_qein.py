@@ -162,6 +162,8 @@ class qe_in(object):
             self.cell_parameters[0, 0] = a
             self.cell_parameters[1, 1] = b
             self.cell_parameters[2, 2] = c
+            
+        self.inv_cell_parameters = np.linalg.inv(self.cell_parameters)
 
 
     def read_atomic_pos(self):
