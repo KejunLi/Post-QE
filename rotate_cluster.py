@@ -12,7 +12,7 @@ from constraint_atoms import cstr_atoms
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    inp_yaml = open(os.path.join(cwd, "inp_rotation.yaml"), "r")
+    inp_yaml = open(os.path.join(cwd, "inp_cluster_rotation.yaml"), "r")
     inp = yaml.load(inp_yaml, Loader=yaml.FullLoader)
     
     if ".in" in inp["inp_f"]:
