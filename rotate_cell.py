@@ -28,7 +28,11 @@ if __name__ == "__main__":
     R.rotation_matrix_rodrigues(inp["rot1_vec1"], inp["rot1_vec2"])
     inv_rotation_mat = np.linalg.inv(R.rot_mat_rodrigues)
     # rotate the atomic positions of a molecule in cartesian coordinate
-    atomic_pos_cart = np.matmul(qe.atomic_pos_cart, inv_rotation_mat)
+    atomic_pos_cart = np.zeros((qe.nat, 3))
+    temp_atomic_pos_cart = np.matmul(qe.atomic_pos_cart, inv_rotation_mat)
+    atomic_pos_cart = temp_atomic_pos_cart
+
+
     atomic_pos_cryst = np.matmul(atomic_pos_cart, qe.inv_cell_parameters)
 
     wf.write_xsf(atoms=qe.atoms, cryst_axes=qe.cell_parameters, atomic_pos_cart=atomic_pos_cryst)

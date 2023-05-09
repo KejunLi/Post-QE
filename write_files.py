@@ -36,7 +36,7 @@ class write_files(object):
                     atoms[i], atomic_pos_cart[i][0], atomic_pos_cart[i][1], atomic_pos_cart[i][2]
                 )
             )
-        np.savetxt(file_to_write, cryst_axes, "%.10f")
+        #np.savetxt(file_to_write, cryst_axes, "%.10f")
         file_to_write.close()
 
     def write_xyz(self, atoms, atomic_pos_cart):
