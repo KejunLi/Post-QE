@@ -10,7 +10,8 @@
 ######################################################################
 
 inp_f: "scf.in"
-center: [6.17999027876447, 6.17999027876447, 6.17999027876447] # unit: angstrom
+center: [6.17999027876447, 6.17999027876447, 6.17999027876447] # unit: angstrom for singlet
+#center: [6.202514597, 6.202514597, 6.202514597] # unit: angstrom for triplet
 radius: 3.8 # unit: angstrom for 70 atoms cluster
 #radius: 3.4 # unit: angstrom for 64 atoms cluster
 CH_bond_length: 1.09 # unit: angstrom
