@@ -1,4 +1,4 @@
-################################ Note ################################
+############################### Note ################################
 # Read inp_f qe input "scf.in" or output "scf.out"
 # This center is at the middle between N and C along the C3 axis
 # Rotate the geometry for twice
@@ -9,9 +9,10 @@
 #     (3) rotate Vxy to rot2_vec2, i.e. rotate the geometry along z-axis
 ######################################################################
 
-inp_f: "scf.in"
-center: [6.17999027876447, 6.17999027876447, 6.17999027876447] # unit: angstrom for singlet
-#center: [6.202514597, 6.202514597, 6.202514597] # unit: angstrom for triplet
+inp_f: "relax.out"
+center: [6.17879269541945, 6.17879269541945, 6.17879269541945] # unit: angstrom for 3A2
+#center: [6.17999027876447, 6.17999027876447, 6.17999027876447] # unit: angstrom for 1E
+#center: [6.202514597, 6.202514597, 6.202514597] # unit: angstrom for 3E
 
 #radius: 3.4 # unit: angstrom for 64 atoms cluster
 #index_atom1: 0 # for 64 atoms cluster
@@ -32,5 +33,4 @@ rot1_vec2: [0, 0, 1]
 
 rot2_vec1: [1, 1, 0]
 rot2_vec2: [1, 0, 0]
-
 
