@@ -9,7 +9,7 @@
 #     (3) rotate Vxy to rot2_vec2, i.e. rotate the geometry along z-axis
 ######################################################################
 
-inp_f: "relax.out"
+inp_f: "scf.in"
 center: [6.17879269541945, 6.17879269541945, 6.17879269541945] # unit: angstrom for 3A2
 #center: [6.17999027876447, 6.17999027876447, 6.17999027876447] # unit: angstrom for 1E
 #center: [6.202514597, 6.202514597, 6.202514597] # unit: angstrom for 3E
