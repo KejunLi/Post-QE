@@ -1476,11 +1476,11 @@ class read_pdos(object):
 if __name__ == "__main__":
     cwd = os.getcwd()
     qe = qe_out(cwd, verbosity=True)
-    print(qe.etot)
-    plt.plot(np.arange(len(qe.etot)), qe.etot)
-    plt.xlabel("# of scf cycles")
-    plt.ylabel("Etot (eV)")
-    plt.savefig("a.png")
+    #print(qe.etot)
+    #plt.plot(np.arange(len(qe.etot)), qe.etot)
+    #plt.xlabel("# of scf cycles")
+    #plt.ylabel("Etot (eV)")
+    #plt.savefig("a.png")
 
     if "cart2cryst" in sys.argv:
         dir_f = str(cwd) + "/cnv.txt"
