@@ -4,6 +4,7 @@ import numpy as np
 import os
 import re
 import argparse
+import matplotlib.pyplot as plt
 
 class qe_out(object):
     """
@@ -274,7 +275,7 @@ class qe_out(object):
         self.read_atomic_pos()
         self.read_eigenenergies()
         self.read_bandgap()
-        self.read_miscellus()
+        #self.read_miscellus()
         self.read_etot()
         
 
@@ -1474,6 +1475,11 @@ class read_pdos(object):
 if __name__ == "__main__":
     cwd = os.getcwd()
     qe = qe_out(cwd, verbosity=True)
+    print(qe.etot)
+    plt.plot(np.arange(len(qe.etot)), qe.etot)
+    plt.xlabel("# of scf cycles")
+    plt.ylabel("Etot (eV)")
+    plt.savefig("a.png")
 
     if "cart2cryst" in sys.argv:
         dir_f = str(cwd) + "/cnv.txt"
