@@ -168,7 +168,8 @@ class qe_out(object):
                 self.R_axes = np.zeros((3, 3))
                 # read celldm1 and convert the unit from bohr to angstron
                 self.celldm1 = (
-                    float(re.findall(r"[+-]?\d\.\d+[Ee][+-]?\d+|[+-]?\d+[Ee][+-]?\d+|[+-]?\d+\.\d*|[+-]?\d+", line)[0]) * Bohr2Ang
+                    float(re.findall(r"[+-]?\d\.\d+[Ee][+-]?\d+|[+-]?\d+[Ee][+-]?\d+|[+-]?\d+\.\d*|[+-]?\d+", line)[1]) * Bohr2Ang
+                    #float(re.findall(r"[+-]?\d+\.\d*", line)[0]) * Bohr2Ang # same as above
                 )
                 for j in range(3):
                     self.cryst_axes[j, :] = re.findall(
