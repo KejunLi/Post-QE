@@ -36,13 +36,13 @@ class cstr_atoms(object):
     +
     +   return(all_atomic_pos_cart, all_mass)
     ++--------------------------------------------------------------------------
-    +   3. Method multi_images(self, mul)
+    +   3. Method supercell(self, x_rep, y_rep, z_rep)
     +   Input: repetition times of the original supercell in each of x, y and z 
     +
     +   Attributes:
-    +   self.images_atomic_pos_cart (atomic positions in cartesian coordinates of
+    +   self.supercell_atomic_pos_cart (atomic positions in cartesian coordinates of
     +   all periodic images)
-    +   self.images_mass (corresponding atomic mass in all images)
+    +   self.supercell_atomic_mass (corresponding atomic mass in all images)
     +
     +   No return
     ++--------------------------------------------------------------------------
@@ -89,7 +89,7 @@ class cstr_atoms(object):
             self.atomic_mass[i] = np.copy(self.dict_atomic_mass(atoms[i]))
         
         self.magic_cube()
-        self.multi_images()
+        self.supercell()
 
     def magic_cube(self):
         """
@@ -165,26 +165,28 @@ class cstr_atoms(object):
         all_atoms = self.cubes_atoms.reshape(27*self.nat)
         return(all_atoms, all_atomic_pos_cryst, all_atomic_pos_cart, all_mass)
 
-    def multi_images(self, mul=2):
+    def supercell(self, x_rep: int=2, y_rep: int=2, z_rep: int=2) -> None:
         """
         ++----------------------------------------------------------------------
-        +   mul (multiple of the original supercell in x, y and z directions)
+        +   x_rep: repetition of the original cell in x directions
+        +   y_rep: repetition of the original cell in y directions
+        +   z_rep: repetition of the original cell in z directions
         ++----------------------------------------------------------------------
         """
         # basis vectors of the Bravis lattice of the supercell
         a = np.matmul([1, 0, 0], self.cell_parameters)
         b = np.matmul([0, 1, 0], self.cell_parameters)
         c = np.matmul([0, 0, 1], self.cell_parameters)
-        self.images_atomic_pos_cart = np.zeros((mul**3*self.nat, 3))
-        self.images_mass = np.zeros(mul**3*self.nat)
-        for i in range(mul):
-            for j in range(mul):
-                for k in range(mul):
-                    line_num = mul**2 * i + mul * j + k
-                    self.images_atomic_pos_cart[
+        self.supercell_atomic_pos_cart = np.zeros((x_rep*y_rep*z_rep*self.nat, 3))
+        self.supercell_atomic_mass = np.zeros(x_rep*y_rep*z_rep*self.nat)
+        for i in range(x_rep):
+            for j in range(y_rep):
+                for k in range(z_rep):
+                    line_num = (i * y_rep + j) * z_rep + k
+                    self.supercell_atomic_pos_cart[
                         line_num * self.nat:(line_num + 1) * self.nat, :
                     ] = self.atomic_pos_cart + i * a + j * b + k * c
-                    self.images_mass[
+                    self.supercell_atomic_mass[
                         line_num * self.nat:(line_num + 1) * self.nat
                     ] = np.copy(self.atomic_mass)
 
