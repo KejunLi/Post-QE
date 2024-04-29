@@ -658,15 +658,29 @@ class qe_out(object):
         """
         self.charge = np.zeros(self.nat)
         num_scf = self.scf_cycle
-        for i, line in enumerate(self.lines):
-            if "End of self-consistent calculation" in line and num_scf > 0:
-                num_scf -= 1
-                continue
-            elif num_scf == 1 and "Magnetic moment per site:" in line:
-                for j in range(self.nat):
+        if not self.soc:
+            for i, line in enumerate(self.lines):
+                if "End of self-consistent calculation" in line and num_scf > 0:
+                    num_scf -= 1
+                    continue
+                elif num_scf == 1 and "Magnetic moment per site:" in line:
+                    for j in range(self.nat):
+                        self.charge[j] = np.asarray(
+                            self.lines[i+1+j].strip().split()
+                        )[3]
+        elif self.soc:
+            j = 0
+            for i, line in enumerate(self.lines):
+                if "End of self-consistent calculation" in line and num_scf > 0:
+                    num_scf -= 1
+                    continue
+                elif num_scf == 1 and "charge :  " in line:
                     self.charge[j] = np.asarray(
-                        self.lines[i+1+j].strip().split()
-                    )[3]
+                        re.findall(r"[+-]?\d+\.\d*", line)[0]
+                    ).astype(float)
+                    j += 1
+                    if j == self.nat - 1:
+                        break
 
 
     def read_magnet(self):
@@ -675,17 +689,37 @@ class qe_out(object):
         +   This method reads the magnetic moment after convergence
         ++----------------------------------------------------------------------
         """
-        self.magnet = np.zeros(self.nat)
-        num_scf = self.scf_cycle
-        for i, line in enumerate(self.lines):
-            if "End of self-consistent calculation" in line and num_scf > 0:
-                num_scf -= 1
-                continue
-            elif num_scf == 1 and "Magnetic moment per site:" in line:
-                for j in range(self.nat):
+        if not self.soc:
+            self.magnet = np.zeros(self.nat)
+            num_scf = self.scf_cycle
+            for i, line in enumerate(self.lines):
+                if "End of self-consistent calculation" in line and num_scf > 0:
+                    num_scf -= 1
+                    continue
+                elif num_scf == 1 and "Magnetic moment per site:" in line:
+                    for j in range(self.nat):
+                        self.magnet[j] = np.asarray(
+                            self.lines[i+1+j].strip().split()
+                        )[5]
+        elif self.soc:
+            self.magnet = np.zeros((self.nat, 3))
+            self.polar_coord = np.zeros((self.nat, 3))
+            num_scf = self.scf_cycle
+            j = 0
+            for i, line in enumerate(self.lines):
+                if "End of self-consistent calculation" in line and num_scf > 0:
+                    num_scf -= 1
+                    continue
+                elif num_scf == 1 and "magnetization :   " in line:
                     self.magnet[j] = np.asarray(
-                        self.lines[i+1+j].strip().split()
-                    )[5]
+                        re.findall(r"[+-]?\d+\.\d*", line)
+                    ).astype(float)
+                    self.polar_coord[j] = np.asarray(
+                        re.findall(r"[+-]?\d+\.\d*", line)
+                    ).astype(float)
+                    j += 1
+                    if j == self.nat - 1:
+                        break
 
 
     def read_forces(self):
