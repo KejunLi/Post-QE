@@ -17,8 +17,10 @@ if __name__ == "__main__":
     inp = yaml.load(inp_yaml, Loader=yaml.FullLoader)
     
     if ".in" in inp["inp_f"]:
+        print("found input")
         qe = qe_in(os.path.join(cwd, inp["inp_f"]))
     elif ".out" in inp["inp_f"]:
+        print("found input")
         qe = qe_out(os.path.join(cwd, inp["inp_f"]))
     else:
         raise ValueError("QE input or QE output not found")
@@ -28,14 +30,21 @@ if __name__ == "__main__":
         cell_parameters=qe.cell_parameters,
         atomic_pos_cryst=qe.atomic_pos_cryst
     )
-    
+
+    if "CH_bond_length" in inp:
+        HBL = inp["CH_bond_length"] # legacy for NV center
+    elif "H_bond_length" in inp:
+        HBL = inp["H_bond_length"]
+    else:
+        raise ValueError("Please input H_bond_length.")
     ca.trim_cell(
         center = inp["center"],
         radius=inp["radius"],
-        H_bond_length=inp["CH_bond_length"]
+        H_bond_length=HBL,
+        common_bond_length=inp["common_bond_length"]
     )
 
-    wf = write_files("nv_cluster")
+    wf = write_files("gen_cluster")
     wf.write_xyz(atoms=ca.trim_cell_atoms, atomic_pos_cart=ca.trim_cell_atomic_pos_cart)
 
 
@@ -47,14 +56,17 @@ if __name__ == "__main__":
             #### rotate cluster to align [111] to [001]
             xyz = read_xsf_xyz(os.path.join(cwd, f))
             print("Read file: ", os.path.join(cwd, f))
-            R.rotation_matrix_rodrigues(inp["rot1_vec1"], inp["rot1_vec2"])
-            inv_rotation_mat = np.linalg.inv(R.rot_mat_rodrigues)
-            # rotate the atomic positions of a molecule in cartesian coordinate
-            atomic_pos_cart = np.matmul(xyz.atomic_pos_cart, inv_rotation_mat)
+            if inp["rot1_vec1"] == inp["rot1_vec2"]:
+                atomic_pos_cart = xyz.atomic_pos_cart
+            else:
+                R.rotation_matrix_rodrigues(inp["rot1_vec1"], inp["rot1_vec2"])
+                inv_rotation_mat = np.linalg.inv(R.rot_mat_rodrigues)
+                # rotate the atomic positions of a molecule in cartesian coordinate
+                atomic_pos_cart = np.matmul(xyz.atomic_pos_cart, inv_rotation_mat)
             wf.write_xyz(atoms=xyz.atoms, atomic_pos_cart=atomic_pos_cart)
 
             #### After the first rotation
-            os.system("mv nv_cluster.xyz 1st_rotation.xyz")
+            os.system("mv gen_cluster.xyz 1st_rotation.xyz")
             xyz = read_xsf_xyz(os.path.join(cwd, "1st_rotation.xyz"))
 
             R.rotation_matrix_rodrigues(

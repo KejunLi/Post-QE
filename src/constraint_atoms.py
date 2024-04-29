@@ -291,7 +291,7 @@ class cstr_atoms(object):
         return mass
     
 
-    def trim_cell(self, center=[0, 0, 0], radius=0, H_bond_length=1.07):
+    def trim_cell(self, center=[0, 0, 0], radius=0, H_bond_length=1.07, common_bond_length=1.6):
         """
         ++----------------------------------------------------------------------
         +   This method should be called after self.magic_cube(self)
@@ -309,7 +309,7 @@ class cstr_atoms(object):
         print("r = {} A".format(radius))
         print("center = {} A".format(center))
         # common bond length for justifying the nearest neighbor atoms
-        common_bond_length = 1.6 # Angstrom
+        # the default common_bond_length = 1.6 # Angstrom for NV center
 
         # initialization
         is_in_sphere = np.full(self.nat*27, True) # value true
