@@ -1,4 +1,4 @@
-# qe_post_processing
+# Post QE
 
 ## Description:
 This GitHub repository contains Python scripts for postprocessing data obtained from first-principles calculations using Quantum ESPRESSO (QE). The scripts are designed to analyze and visualize the results, providing insights into electronic structures, band structures, and other relevant properties.
