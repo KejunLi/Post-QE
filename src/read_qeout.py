@@ -180,6 +180,7 @@ class qe_out(object):
                     )
                 self.cell_parameters = self.cryst_axes * self.celldm1
                 self.inv_cell_parameters = np.linalg.inv(self.cell_parameters)
+                self.R_axes = self.R_axes * (2*np.pi / celldm1)
             if "CELL_PARAMETERS" in line:
                 if "alat" in line:
                     alat = (
@@ -211,7 +212,7 @@ class qe_out(object):
                     for j in range(self.nk):
                         self.kpts_cart_coord[j, :] = np.array(
                             re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
-                        ).astype(float)
+                        ).astype(float) * (2*np.pi / celldm1)
                 if "cryst. coord." in self.lines[i+self.nk+3]:
                     # exist only when being verbosity
                     for j in range(self.nk):
