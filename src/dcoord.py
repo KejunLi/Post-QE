@@ -602,46 +602,56 @@ nuclear_coord = []
 for f in os.listdir(cwd):
     # if qe output is in a folder relax*
     if f.startswith("relax") and not f.endswith("out") and not f.endswith("in"):
-        qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
+        qe = qe_in(os.path.join(cwd, f, "scf.in"))
+        #qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
         f_relax.append(f)
-        nuclear_coord.append(qe.atomic_pos_cart)
+        nuclear_coord.append(np.einsum("ij,i->ij", qe.atomic_pos_cart, np.sqrt(qe.atomic_mass)))
     # if qe output is in a folder singlet*
     elif f.startswith("singlet") and not f.endswith("out") and not f.endswith("in"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
         f_relax.append(f)
-        nuclear_coord.append(qe.atomic_pos_cart)
+        nuclear_coord.append(np.einsum("ij,i->ij", qe.atomic_pos_cart, np.sqrt(qe.atomic_mass)))
     # if qe output is in a folder triplet*
     elif f.startswith("triplet") and not f.endswith("out") and not f.endswith("in"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
         f_relax.append(f)
-        nuclear_coord.append(qe.atomic_pos_cart)
+        nuclear_coord.append(np.einsum("ij,i->ij", qe.atomic_pos_cart, np.sqrt(qe.atomic_mass)))
     # if qe output is in current folder
     elif f.startswith("relax") and f.endswith("out"):
         qe = qe_out(os.path.join(cwd, f), verbosity=False)
         f_relax.append(f)
-        nuclear_coord.append(qe.atomic_pos_cart)
+        nuclear_coord.append(np.einsum("ij,i->ij", qe.atomic_pos_cart, np.sqrt(qe.atomic_mass)))
     # if qe output is in current folder
     elif f.startswith("relax") and f.endswith("in"):
         qe = qe_in(os.path.join(cwd, f))
         f_relax.append(f)
-        nuclear_coord.append(qe.atomic_pos_cart)
+        nuclear_coord.append(np.einsum("ij,i->ij", qe.atomic_pos_cart, np.sqrt(qe.atomic_mass)))
     else:
         print(f, "is not a QE output")
         pass
+#parser = argparse.ArgumentParser(
+#    description='Calculate dR (A) and output VESTA-compatible file (.xsf).'
+#)
+#parser.add_argument(
+#    "dR", type=float, nargs="?", default=0.0, help='dR threshold'
+#)
+#args = parser.parse_args()
+#dR_thr = args.dR
 parser = argparse.ArgumentParser(
-    description='Calculate dR (A) and output VESTA-compatible file (.xsf).'
+    description='Calculate dQ (amu1/2*A) and output VESTA-compatible file (.xsf).'
 )
 parser.add_argument(
-    "dR", type=float, nargs="?", default=0.0, help='dR threshold'
+    "dQ", type=float, nargs="?", default=0.0, help='dQ threshold'
 )
 args = parser.parse_args()
-dR_thr = args.dR
+dQ_thr = args.dQ
 
 for i in range(len(f_relax)):
     j = i
     while j+1 < len(f_relax):
         d_coord = nuclear_coord[i] - nuclear_coord[j+1]
         amp_d_coord = np.linalg.norm(d_coord, axis=1)
+        print("dQ = {:.3f} amu^1/2 * A".format(np.sqrt(np.sum(amp_d_coord**2))))
         norm_d_coord = d_coord/np.sqrt(np.sum(amp_d_coord**2))
         norm_d_coord_square = np.einsum("ij,ij->ij", norm_d_coord, norm_d_coord)
         dr_square_per_atom = np.einsum("ij->i", norm_d_coord_square)
@@ -650,21 +660,25 @@ for i in range(len(f_relax)):
         print("1D effective inverse participation ratio = {:.0f}".format(IPR))
         print("1D effective localization ratio = {:.0f}".format(localization_ratio))
         for k in range(len(amp_d_coord)):
-            if amp_d_coord[k] < dR_thr:
+            #if amp_d_coord[k] < dR_thr:
+            if amp_d_coord[k] < dQ_thr:
                 d_coord[k] = np.zeros(3)
             else:
                 pass
         # write dR with atomic positions into xsf file, compatible with VESTA
         atomic_pos_cart_d_coord = np.concatenate(
-            (qe.atomic_pos_cart, d_coord), axis=1
+            (qe.atomic_pos_cart, np.einsum("ij,i->ij", d_coord, 1/qe.atomic_mass)), axis=1
         )
         atoms_atomic_pos_cart_d_coord = np.column_stack(
             (qe.atoms, atomic_pos_cart_d_coord)
         )
         nat = qe.atoms.shape[0]
-        print("dR is saved in ", "dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf")
-        outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+"_dR_thr_"+str(dR_thr)+"A.xsf", "w")
-        outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+"_dR_thr_"+str(dR_thr)+"A.xsf", "a")
+        #print("dR is saved in ", "dR_"+f_relax[i]+"-"+f_relax[j+1]+".xsf")
+        #outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+"_dR_thr_"+str(dR_thr)+"A.xsf", "w")
+        #outfile = open(cwd+"/dR_"+f_relax[i]+"-"+f_relax[j+1]+"_dR_thr_"+str(dR_thr)+"A.xsf", "a")
+        print("dQ is saved in ", "dQ_"+f_relax[i]+"-"+f_relax[j+1]+".xsf")
+        outfile = open(cwd+"/dQ_"+f_relax[i]+"-"+f_relax[j+1]+"_dQ_thr_"+str(dQ_thr)+"amu_half_A.xsf", "w")
+        outfile = open(cwd+"/dQ_"+f_relax[i]+"-"+f_relax[j+1]+"_dQ_thr_"+str(dQ_thr)+"amu_half_A.xsf", "a")
         outfile.write("CRYSTAL\n")
         outfile.write("PRIMVEC\n")
         np.savetxt(outfile, qe.cell_parameters, "%.10f")
