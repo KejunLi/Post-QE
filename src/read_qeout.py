@@ -180,7 +180,7 @@ class qe_out(object):
                     )
                 self.cell_parameters = self.cryst_axes * self.celldm1
                 self.inv_cell_parameters = np.linalg.inv(self.cell_parameters)
-                self.R_axes = self.R_axes * (2*np.pi / celldm1)
+                self.R_axes = self.R_axes * (2*np.pi / self.celldm1)
             if "CELL_PARAMETERS" in line:
                 if "alat" in line:
                     alat = (
@@ -212,7 +212,7 @@ class qe_out(object):
                     for j in range(self.nk):
                         self.kpts_cart_coord[j, :] = np.array(
                             re.findall(r"[+-]?\d+\.\d*", self.lines[i+j+2])[0:3]
-                        ).astype(float) * (2*np.pi / celldm1)
+                        ).astype(float) * (2*np.pi / self.celldm1)
                 if "cryst. coord." in self.lines[i+self.nk+3]:
                     # exist only when being verbosity
                     for j in range(self.nk):
@@ -404,7 +404,7 @@ class qe_out(object):
                 for j in range(rows):
                     if int_multi_8:
                         self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
-                                "[+-]?\d+\.\d*", temp_E[j]
+                                r"[+-]?\d+\.\d*", temp_E[j]
                             )
                         if self.exist_occ:
                             self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
@@ -413,7 +413,7 @@ class qe_out(object):
                     else:
                         if j < rows -1:
                             self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
-                                "[+-]?\d+\.\d*", temp_E[j]
+                                r"[+-]?\d+\.\d*", temp_E[j]
                             )
                             if self.exist_occ:
                                 self.occ[k_counted, j*8:(j+1)*8] = np.asarray(
@@ -421,7 +421,7 @@ class qe_out(object):
                                 )
                         else:
                             self.eigenE[k_counted, j*8:j*8+modulo] = re.findall(
-                                "[+-]?\d+\.\d*", temp_E[j]
+                                r"[+-]?\d+\.\d*", temp_E[j]
                             )
                             if self.exist_occ:
                                 self.occ[k_counted, j*8:j*8+modulo] = np.asarray(
@@ -1298,16 +1298,16 @@ class qe_bands(object):
                 for j in range(rows):
                     if int_multi_8:
                         self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
-                                "[+-]?\d+\.\d*", temp_E[j]
+                                r"[+-]?\d+\.\d*", temp_E[j]
                         )
                     else:
                         if j < rows -1:
                             self.eigenE[k_counted, j*8:(j+1)*8] = re.findall(
-                                "[+-]?\d+\.\d*", temp_E[j]
+                                r"[+-]?\d+\.\d*", temp_E[j]
                             )
                         else:
                             self.eigenE[k_counted, j*8:j*8+modulo] = re.findall(
-                                "[+-]?\d+\.\d*", temp_E[j]
+                                r"[+-]?\d+\.\d*", temp_E[j]
                             )
                 k_counted += 1
         
@@ -1361,7 +1361,7 @@ class read_pdos(object):
         # judge if SOC or not
         for i, line in enumerate(self.lines):
             if "state #" in line:
-                if "j" in re.findall("\(([^)]+)\)", line)[1]:
+                if "j" in re.findall(r"\(([^)]+)\)", line)[1]:
                     self.soc = True
                     break
                 else:
@@ -1387,23 +1387,23 @@ class read_pdos(object):
                     self.atomic_states.append(
                         {
                             "state": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[0]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[0]
                             ),
                             "atom_num": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[1]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[1]
                             ),
-                            "atomic_species": re.findall("\(([^)]+)\)", line)[0],
+                            "atomic_species": re.findall(r"\(([^)]+)\)", line)[0],
                             "wfc": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[2]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[2]
                             ),
                             "l": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[3]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[3]
                             ),
                             "j": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[4]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[4]
                             ),
                             "m_j": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[5]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[5]
                             )
                         }
                     )
@@ -1413,20 +1413,20 @@ class read_pdos(object):
                     self.atomic_states.append(
                         {
                             "state": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[0]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[0]
                             ),
                             "atom_num": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[1]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[1]
                             ),
-                            "atomic_species": re.findall("\(([^)]+)\)", line)[0],
+                            "atomic_species": re.findall(r"\(([^)]+)\)", line)[0],
                             "wfc": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[2]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[2]
                             ),
                             "l": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[3]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[3]
                             ),
                             "m": float(
-                                re.findall("[+-]?\d+\.\d*|\d+", line)[4]
+                                re.findall(r"[+-]?\d+\.\d*|\d+", line)[4]
                             )
                         }
                     )
@@ -1461,10 +1461,10 @@ class read_pdos(object):
                 temp_dict_lowdin_charges.append(
                     {
                         "atom_num": float(
-                            re.findall("[+-]?\d+\.\d*|\d+", line)[0]
+                            re.findall(r"[+-]?\d+\.\d*|\d+", line)[0]
                         ),
                         "tot_charge": float(
-                            re.findall("[+-]?\d+\.\d*|\d+", line)[1]
+                            re.findall(r"[+-]?\d+\.\d*|\d+", line)[1]
                         )
                     }
                 )
@@ -1488,11 +1488,11 @@ class read_pdos(object):
         #         if "total charge =" in line:
         #             self.atomic_states.append(
         #                 {
-        #                     "atom_num": re.findall("[+-]?\d+\.\d*|\d", f)[0],
-        #                     "tot_charge": re.findall("[+-]?\d+\.\d*|\d", f)[1],
+        #                     "atom_num": re.findall(r"[+-]?\d+\.\d*|\d", f)[0],
+        #                     "tot_charge": re.findall(r"[+-]?\d+\.\d*|\d", f)[1],
         #                     "proj_charge": {
-        #                         "l": re.findall("\,([^=#]+)\=", f)[0],
-        #                         "charge": re.findall("[+-]?\d+\.\d*|\d", f)[2]
+        #                         "l": re.findall(r"\,([^=#]+)\=", f)[0],
+        #                         "charge": re.findall(r"[+-]?\d+\.\d*|\d", f)[2]
         #                     },
         #                 }
         #             )

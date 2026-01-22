@@ -23,7 +23,7 @@ for f in os.listdir(cwd):
         f_relax.append(f)
         etot.append(qe.final_energy)
         coord.append(qe.atomic_pos_cart)
-    elif f.startswith("singlet") or f.startswith("triplet"):
+    elif f.startswith("singlet") or f.startswith("triplet") or f.startswith("doublet"):
         qe = qe_out(os.path.join(cwd, f, "relax.out"), verbosity=False)
         # if qe_out exits, the code will stop here
         f_relax.append(f)
@@ -49,7 +49,7 @@ for i in range(len(f_relax)):
         dq = np.linalg.norm(d_coord, axis=1)**2 * qe.atomic_mass
         dQ = np.sqrt(np.sum(dq))
         print(
-            "ΔQ = {} amu^1/2\AA ({}-{})".format(
+            r"ΔQ = {} amu^1/2\AA ({}-{})".format(
                 dQ, f_relax[i], f_relax[j+1]
             )
         )
